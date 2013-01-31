@@ -12,13 +12,19 @@
 #ifndef __HAL__
 #define __HAL__
 
+
 /* hal dependancies */
+#include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stm32f10x_conf.h>
+
 
 /* hal components */
 #include "sys.h"
-///@todo add other hal layers here as needed
+#include "gpio.h"
+#include <hw.h> 	///< this can be the default in the hal/stmf107x dir or your own for a custom system
+
 
 #endif
 
