@@ -56,10 +56,10 @@ void gpio_set_pin(gpio_pin_t *pin, bool state)
 	// change the pin output
 	if (state)
 		// set hi
-		pin->port->ODR |= pin->mask;
+		pin->port->ODR |= pin->cfg.GPIO_Pin;
 	else
 		// set lo
-		pin->port->ODR &= ~pin->mask;
+		pin->port->ODR &= ~pin->cfg.GPIO_Pin;
 }
 
 // this toggles at about 58KHz max, see gpio utest
@@ -88,7 +88,7 @@ void gpio_toggle_pin(gpio_pin_t *pin)
 	}
 
 	// toggle the pin
-	pin->port->ODR ^= pin->mask;
+	pin->port->ODR ^= pin->cfg.GPIO_Pin;
 }
 
 
@@ -117,6 +117,6 @@ bool gpio_get_pin(gpio_pin_t *pin)
 	}
 
 	// return the state of the pin
-	return ((pin->port->ODR & pin->mask) != 0);
+	return ((pin->port->ODR & pin->cfg.GPIO_Pin) != 0);
 }
 
