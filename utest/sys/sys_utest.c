@@ -48,6 +48,7 @@ void init()
 	gpio_init();
 }
 
+
 void main(void)
 {
 	uint32_t tick = 0, last_tick = 0;
