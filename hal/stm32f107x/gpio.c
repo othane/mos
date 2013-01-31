@@ -14,6 +14,31 @@
 #include "gpio_hw.h"
 
 
+// look up which APB2 perph clk is associated with this pin
+uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
+{
+	switch ((uint32_t)pin->port)
+	{
+		case (uint32_t)GPIOA:
+			return (RCC_APB2Periph_GPIOA);
+		case (uint32_t)GPIOB:
+			return (RCC_APB2Periph_GPIOB);
+		case (uint32_t)GPIOC:
+			return (RCC_APB2Periph_GPIOC);
+		case (uint32_t)GPIOD:
+			return (RCC_APB2Periph_GPIOD);
+		case (uint32_t)GPIOE:
+			return (RCC_APB2Periph_GPIOE);
+		case (uint32_t)GPIOF:
+			return (RCC_APB2Periph_GPIOF);
+		case (uint32_t)GPIOG:
+			return (RCC_APB2Periph_GPIOG);
+		default:
+			return (RCC_APB2Periph_GPIOA);
+	}
+}
+
+
 void gpio_init_pin(gpio_pin_t *pin)
 {
 	// module should ignore null pins
@@ -22,7 +47,7 @@ void gpio_init_pin(gpio_pin_t *pin)
 
 	// all gpio pins on the stm32f107x are connected to APB2 so this will be ok
 	///@todo should we check if it is enabled before re-enabling ?
-	RCC_APB2PeriphClockCmd(pin->rcc_periph, ENABLE);
+	RCC_APB2PeriphClockCmd(pin_to_rcc_periph(pin), ENABLE);
 
 	// setup the pin configurations 
 	GPIO_Init(pin->port, &pin->cfg);

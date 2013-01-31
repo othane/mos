@@ -19,7 +19,6 @@
 // internal representation of a gpio pin
 struct gpio_pin_t
 {
-	uint32_t rcc_periph;		///< used need to enable the clk to the port via RCC_APB2PeriphClockCmd (all gpio are on APB2)
 	GPIO_TypeDef *port;			///< port addresses
 	GPIO_InitTypeDef cfg;		///< used to configure the port via GPIO_Init()
 };
