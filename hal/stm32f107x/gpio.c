@@ -10,6 +10,7 @@
  */
 
 
+#include <stm32f10x_conf.h>
 #include "hal.h"
 #include "gpio_hw.h"
 
