@@ -180,6 +180,19 @@ void sys_log()
 }
 
 
+/**
+ * @brief Hard Fault ISR (a hard fault has occurred, log a message and spin)
+ */
+void HardFault_Handler(void)
+{
+	if (CoreDebug->DHCSR & 0x01)		//is C_DEBUGEN set, is the debugger connected?
+	{
+		//__breakpoint(0);
+		while (1) {};
+	}
+}
+
+
 // get the last error logged at the system level
 enum SYS_ERR sys_get_error(void)
 {
