@@ -1,0 +1,108 @@
+/**
+ * @file spis.h
+ *
+ * @brief interface to the slave spi modules of the hal
+ *
+ * @author OT
+ *
+ * @date Jan 2013
+ *
+ */
+
+
+#ifndef __SPIS__
+#define __SPIS__
+
+
+/**
+ * @brief opaque slave spi type
+ */
+typedef struct spis_t spis_t;
+
+
+/**
+ * @brief setup the spi slave device
+ */
+void spis_init(spis_t *spis);
+
+
+/**
+ * @brief callback called when transaction starts or stops (called on nss edge)
+ * @param spis device on which the transaction started or stopped
+ */
+typedef void (*spis_trans_start_stop)(spis_t *spis);
+
+
+/**
+ * @brief set the callback called when transaction starts (nss lo)
+ * @param spis the device to register this event with
+ * @param start call this on transaction start (nss lo)
+ */
+void spis_set_trans_start(spis_t *spis, spis_trans_start_stop start);
+
+
+/**
+ * @brief set the callback called when transaction starts (nss lo)
+ * @param spis the device to register this event with
+ * @param stop call this on transaction stop (nss lo)
+ */
+void spis_set_trans_stop(spis_t *spis, spis_trans_start_stop stop);
+
+
+/**
+ * @brief callback when a spis read completes
+ * @param spis spi slave device on which the read completed
+ * @param buf pointer to a buffer with the read results in
+ * @param len number of bytes actually read
+ * @param param completion parameter passed into the call to spis_read
+ */
+typedef void (*spis_read_complete)(spis_t *spis, void *buf, uint16_t len, void *param);
+
+
+/**
+ * @brief start a asynchronous read on the spi bus
+ * @param spis spi slave device to start reading from
+ * @param buf pointer to a buffer to store the read results in
+ * @param len number of bytes to read before cb is called
+ * @param cb completion callback, this is called when number of bytes is finished reading or the transaction ends (nss goes hi)
+ * @param param parameter passed to the completion callback
+ */
+void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, void *param);
+
+/**
+ * @brief cancel a read operation
+ * @param spis spi slave device to cancel the read for
+ */
+void spis_cancel_read(spis_t *spis);
+
+
+/**
+ * @brief callback when a spis write completes
+ * @param spis spi slave device on which the write completed
+ * @param buf pointer to a buffer written
+ * @param len number of bytes actually written 
+ * @param param completion parameter passed into the call to spis_write
+ */
+typedef void (*spis_write_complete)(spis_t *spis, void *buf, uint16_t len, void *param);
+
+
+/**
+ * @brief load data to write out the spi bus asynchronously 
+ * @param spis spi slave device to start writing to
+ * @param buf buffer to send
+ * @param len number of bytes in the buffer (if spi transaction continues return empty bits)
+ * @param cb completion callback, this is called when number of bytes is sent or the transaction ends (nss goes hi)
+ * @param param parameter passed to the completion callback
+ */
+void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, void *param);
+
+
+/**
+ * @brief cancel a write operation
+ * @param spis spi slave device to cancel the write for
+ */
+void spis_cancel_write(spis_t *spis);
+
+
+#endif
+

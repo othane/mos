@@ -18,25 +18,41 @@
 // look up which APB2 perph clk is associated with this pin
 uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
 {
+	uint32_t ret;
+
+	// map pin to bits to turn on port clock
 	switch ((uint32_t)pin->port)
 	{
 		case (uint32_t)GPIOA:
-			return (RCC_APB2Periph_GPIOA);
+			ret = RCC_APB2Periph_GPIOA;
+			break;
 		case (uint32_t)GPIOB:
-			return (RCC_APB2Periph_GPIOB);
+			ret = RCC_APB2Periph_GPIOB;
+			break;
 		case (uint32_t)GPIOC:
-			return (RCC_APB2Periph_GPIOC);
+			ret = RCC_APB2Periph_GPIOC;
+			break;
 		case (uint32_t)GPIOD:
-			return (RCC_APB2Periph_GPIOD);
+			ret = RCC_APB2Periph_GPIOD;
+			break;
 		case (uint32_t)GPIOE:
-			return (RCC_APB2Periph_GPIOE);
+			ret = RCC_APB2Periph_GPIOE;
+			break;
 		case (uint32_t)GPIOF:
-			return (RCC_APB2Periph_GPIOF);
+			ret = RCC_APB2Periph_GPIOF;
+			break;
 		case (uint32_t)GPIOG:
-			return (RCC_APB2Periph_GPIOG);
+			ret = RCC_APB2Periph_GPIOG;
+			break;
 		default:
-			return (RCC_APB2Periph_GPIOA);
+			ret = RCC_APB2Periph_GPIOA;
+			break;
 	}
+
+	// if this pin is for an alternate function then enable alt function clk
+	ret |= RCC_APB2Periph_AFIO;
+
+	return ret;
 }
 
 
@@ -49,6 +65,7 @@ void gpio_init_pin(gpio_pin_t *pin)
 	// all gpio pins on the stm32f107x are connected to APB2 so this will be ok
 	///@todo should we check if it is enabled before re-enabling ?
 	RCC_APB2PeriphClockCmd(pin_to_rcc_periph(pin), ENABLE);
+	RCC_APB2PeriphResetCmd(pin_to_rcc_periph(pin), DISABLE);
 
 	// setup the pin configurations 
 	GPIO_Init(pin->port, &pin->cfg);

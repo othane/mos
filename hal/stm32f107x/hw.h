@@ -22,5 +22,11 @@ extern gpio_pin_t gpio_mco;
 extern gpio_pin_t gpio_pa10;
 
 
+/**
+ * list of slave spi device available oh this hw
+ */
+extern spis_t spis3;
+
+
 #endif
 

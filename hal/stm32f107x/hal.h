@@ -22,6 +22,8 @@
 /* hal components */
 #include "sys.h"
 #include "gpio.h"
+#include "spis.h"
+
 #include <hw.h> 	///< this can be the default in the hal/stmf107x dir or your own for a custom system
 
 

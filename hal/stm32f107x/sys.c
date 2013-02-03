@@ -98,9 +98,6 @@ static void sys_temp_init(void)
 // init a log via uart or trace
 static void sys_log_init(void)
 {
-	// for debugging via trace on jtag (very good !!)
-	DBGMCU->CR |= DBGMCU_CR_TRACE_IOEN;
-
 	///@todo uart log
 }
 
@@ -207,6 +204,16 @@ enum SYS_ERR sys_get_error(void)
 }
 
 
+// spin for time ms
+void sys_spin(uint32_t time)
+{
+	uint32_t end_time = sys_get_tick() + time;
+
+	while (end_time != sys_get_tick())
+	{}
+}
+
+
 // setup the basic components of any system
 void sys_init(void)
 {
@@ -215,6 +222,15 @@ void sys_init(void)
 	sys_tick_init();
 	sys_temp_init();
 	sys_log_init();
+
+	// i dont know what is going on here (something HW related), but it seems to
+	// be needed for the blade layout, I will look at it when I have more time.
+	USART_DeInit(USART3);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO,ENABLE);
+
+	// for some reason we need to spin here (I dont know why, maybe a bad clk)
+	sys_spin(2);
 }
 
 
