@@ -13,6 +13,7 @@
 #include "hal.h"
 #include "spis_hw.h"
 
+
 static void spis_clear_read(spis_t *spis)
 {
 	// reset read buffers, next time the isr runs it will have no where to read from and give up
@@ -21,6 +22,13 @@ static void spis_clear_read(spis_t *spis)
 	spis->read_count = 0;
 	spis->read_complete_cb = NULL;
 	spis->read_complete_param = NULL;
+}
+
+
+// outside world interface to cancel a read op
+void spis_cancel_read(spis_t *spis)
+{
+	spis_clear_read(spis);
 }
 
 
@@ -33,6 +41,13 @@ static void spis_clear_write(spis_t *spis)
 	spis->write_complete_cb = NULL;
 	spis->write_complete_param = NULL;
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_TXE, DISABLE);
+}
+
+
+// outside world interface to cancel a write op
+void spis_cancel_write(spis_t *spis)
+{
+	spis_clear_write(spis);
 }
 
 
@@ -146,7 +161,7 @@ static void spis_irq_handler(spis_t *spis)
 	  	uint8_t rx_byte = SPI_I2S_ReceiveData(spis->channel);
 		
 		// Rx buffer has data, do we have anywhere and enough space to store it
-		if (spis->read_buf != NULL)
+		if ((spis->read_buf != NULL) && (spis->read_count < spis->read_buf_len) && (spis->read_buf_len > 0))
 			// buffer the last Rx byte
 			spis->read_buf[spis->read_count] = rx_byte;
 		
@@ -173,7 +188,7 @@ static void spis_irq_handler(spis_t *spis)
 	  	volatile uint8_t tx_byte = 0xCC;	// transmit a fixed pattern if we have nothing to send
 		
 		// do we have anything to transmit
-		if (spis->write_buf != NULL)
+		if ((spis->write_buf != NULL) && (spis->write_count < spis->write_buf_len) && (spis->write_buf_len > 0))
 			tx_byte = spis->write_buf[spis->write_count];
 		
 		// send the data
