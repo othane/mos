@@ -247,13 +247,17 @@ void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, voi
 		///@todo read in progress already
 		goto error;
 	
+	// clear the Rx buffer so the read start fresh
+	while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_RXNE) == SET)
+	  SPI_I2S_ReceiveData(spis->channel);	
+	
 	// load the read info once we leave the critical section the isr will populate the read buffer for us
 	spis->read_buf = buf;
 	spis->read_buf_len = len;
 	spis->read_count = 0;
 	spis->read_complete_cb = cb;
 	spis->read_complete_param = param;
-
+	
 error:
 	sys_leave_critical_section();
 	return;
@@ -279,7 +283,7 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	spis->write_complete_param = param;
 	
 	// kick off the write by sending the first byte the isr will handle sending the remaining bytes
-	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE) == SET)
+	if (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE) == SET)
 	{
 		SPI_I2S_SendData(spis->channel, spis->write_buf[0]);
 		spis->write_count++;
