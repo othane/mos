@@ -236,7 +236,7 @@ void sys_init(void)
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_AFIO,ENABLE);
 
 	// for some reason we need to spin here (I dont know why, maybe a bad clk)
-	sys_spin(2);
+	sys_spin(100);
 }
 
 
