@@ -69,6 +69,12 @@ enum SYS_ERR sys_get_error(void);
 
 
 /**
+ * @brief burn a few intructions 
+ */
+void sys_nop(void);
+
+
+/**
  * @brief Initialise the hal system level
  * @note call this first thing on start-up
  */

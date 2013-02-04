@@ -204,6 +204,12 @@ enum SYS_ERR sys_get_error(void)
 }
 
 
+void sys_nop(void)
+{
+	__NOP();
+}
+
+
 // spin for time ms
 void sys_spin(uint32_t time)
 {
