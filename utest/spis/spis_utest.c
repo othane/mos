@@ -23,23 +23,27 @@ void init(void)
 }
 
 
-#define BUF_LEN 3	///@note set the nanoboard to read 3 and write 3 bytes (it is 1/2 duplex)
-static uint8_t write_buf[BUF_LEN] = {0x03, 0x04, 0x5};
-static uint8_t read_buf[BUF_LEN] = {0,};
+#define WRITE_BUF_LEN 6
+#define READ_BUF_LEN 3
+static uint8_t write_buf[WRITE_BUF_LEN] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
+static uint8_t read_buf[6] = {0,};
 
 
 void read_complete(spis_t *spis, void *buf, uint16_t len, void *param);
 void write_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
 	// keep reading
-	spis_read(&spis3, read_buf, BUF_LEN, read_complete, NULL);  
+	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
+	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
 }
 
 
 void read_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-	// echo back
-	spis_write(spis, write_buf, BUF_LEN, write_complete, NULL);
+  	if (((uint8_t *)buf)[1] == 0x00)
+	  sys_nop();
+	// echo back	
+	//memcpy(&write_buf[READ_BUF_LEN], buf, len);
 }
 
 
@@ -47,8 +51,9 @@ void main(void)
 {
 	init();
 
-	// kick off a read
-	spis_read(&spis3, read_buf, BUF_LEN, read_complete, NULL);
+	// kick off io
+	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
+	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
 	
 	// do nothing
 	while (1)
