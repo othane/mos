@@ -30,17 +30,10 @@ static uint8_t read_buf[6] = {0,};
 uint16_t wcount = 0;
 uint16_t rcount = 0;
 
-#define TEST2
+#define TEST1
 void read_complete(spis_t *spis, void *buf, uint16_t len, void *param);
 
 #ifdef TEST1
-void test_init(void)
-{
-	// kick off io
-	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
-	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);  
-}
-
 void write_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
   	int k;
@@ -62,6 +55,13 @@ void read_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 	
 	// echo back	
 	memcpy(&write_buf[READ_BUF_LEN], buf, len);
+}
+
+void test_init(void)
+{
+	// kick off io
+	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
+	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);  
 }
 #endif
 
