@@ -15,17 +15,34 @@
 #include <hal.h>
 
 
+void falling_edge(gpio_pin_t *pin, void *param)
+{
+	sys_nop();
+}
+
+void rising_edge(gpio_pin_t *pin, void *param)
+{
+	sys_nop();
+}
+
+
 void init(void)
 {
 	sys_init();
 	
 	gpio_init_pin(&gpio_mco);
 	gpio_init_pin(&gpio_pa10);
+	gpio_init_pin(&gpio_pa15);
+	
+	gpio_set_falling_edge_event(&gpio_pa15, falling_edge, NULL);
+	gpio_set_rising_edge_event(&gpio_pa15, rising_edge, NULL);
 }
 
 
 void main(void)
 {
+	volatile bool pa15_state;
+
 	init();
 	
 	// set the pin high, check it is high
@@ -42,6 +59,7 @@ void main(void)
 	while (1)
 	{
 		gpio_toggle_pin(&gpio_pa10);
+		pa15_state = gpio_get_pin(&gpio_pa15);
 	}
 }
 

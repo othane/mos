@@ -20,6 +20,7 @@
 #include <gpio_hw.h>
 gpio_pin_t gpio_mco 		= {GPIOA, {GPIO_Pin_8,  GPIO_Speed_50MHz, GPIO_Mode_AF_PP}};
 gpio_pin_t gpio_pa10 		= {GPIOA, {GPIO_Pin_10, GPIO_Speed_50MHz, GPIO_Mode_Out_PP}};
+gpio_pin_t gpio_pa15 		= {GPIOA, {GPIO_Pin_15, GPIO_Speed_50MHz, GPIO_Mode_IN_FLOATING}};
 
 gpio_pin_t gpio_spi1_nss 	= {GPIOA, {GPIO_Pin_5, GPIO_Speed_50MHz, GPIO_Mode_IN_FLOATING}};
 gpio_pin_t gpio_spi1_sck 	= {GPIOA, {GPIO_Pin_7, GPIO_Speed_50MHz, GPIO_Mode_IN_FLOATING}};
