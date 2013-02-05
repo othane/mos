@@ -160,6 +160,6 @@ bool gpio_get_pin(gpio_pin_t *pin)
 	}
 
 	// return the state of the pin
-	return ((pin->port->ODR & pin->cfg.GPIO_Pin) != 0);
+	return ((pin->port->IDR & pin->cfg.GPIO_Pin) != 0);
 }
 
