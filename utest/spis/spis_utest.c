@@ -16,22 +16,24 @@
 #include <hal.h>
 
 
-void spis3_select(spis_t *spis)
+void spis3_select(spis_t *spis, void *param)
 {
 	sys_nop();
 }
 
-void spis3_deselect(spis_t *spis)
+
+void spis3_deselect(spis_t *spis, void *param)
 {
 	sys_nop();    
 }
+
 
 void init(void)
 {
 	sys_init();
 	spis_init(&spis3);
-	spis_set_select_cb(&spis3, spis3_select);
-	spis_set_deselect_cb(&spis3, spis3_deselect);
+	spis_set_select_cb(&spis3, spis3_select, NULL);
+	spis_set_deselect_cb(&spis3, spis3_deselect, NULL);
 }
 
 

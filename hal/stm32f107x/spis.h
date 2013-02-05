@@ -30,14 +30,14 @@ void spis_init(spis_t *spis);
  * @brief callback called when chip select goes lo
  * @param spis device on which the chip select dropped
  */
-typedef void (*spis_select_cb)(spis_t *spis);
+typedef void (*spis_select_cb)(spis_t *spis, void *param);
 
 
 /**
  * @brief callback called when chip select goes hi
  * @param spis device on which the chip select rose
  */
-typedef void (*spis_deselect_cb)(spis_t *spis);
+typedef void (*spis_deselect_cb)(spis_t *spis, void *param);
 
 
 /**
@@ -45,7 +45,7 @@ typedef void (*spis_deselect_cb)(spis_t *spis);
  * @param spis the device to register this event with
  * @param select called when the chip select line goes lo
  */
-void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb);
+void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb, void *param);
 
 
 /**
@@ -53,7 +53,7 @@ void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb);
  * @param spis the device to register this event with
  * @param deselect called when the chip select line goes hi
  */
-void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb);
+void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb, void *param);
 
 
 /**

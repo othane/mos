@@ -79,13 +79,14 @@ static void spis_select(gpio_pin_t *pin, void *param)
 	// just run select callback
 	spis_t *spis = (spis_t *)param;
 	if (spis->select_cb != NULL)
-		spis->select_cb(spis);
+		spis->select_cb(spis, spis->select_cb_param);
 }
 
 
-void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb)
+void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb, void *param)
 {
 	spis->select_cb = select_cb;
+	spis->select_cb_param = param;
 }
 
 
@@ -94,13 +95,14 @@ static void spis_deselect(gpio_pin_t *pin, void *param)
 	// just run deselect callback
 	spis_t *spis = (spis_t *)param;
 	if (spis->deselect_cb != NULL)
-		spis->deselect_cb(spis);
+		spis->deselect_cb(spis, spis->deselect_cb_param);
 }
 
 
-void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb)
+void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb, void *param)
 {
 	spis->deselect_cb = deselect_cb;
+	spis->deselect_cb_param = param;
 }
 
 

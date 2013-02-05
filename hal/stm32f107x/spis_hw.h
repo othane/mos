@@ -26,7 +26,9 @@ struct spis_t
 
 	// transaction start
 	spis_select_cb select_cb;						///< this is called when nss goes lo starting a new transaction
+	void *select_cb_param;							///< param passed to the spis_select_cb
 	spis_deselect_cb deselect_cb;					///< this is called when nss goes hi ending a current transaction
+	void *deselect_cb_param;						///< param passed to the spis_deselect_cb
 	
 	// read buffers
 	uint8_t *read_buf;								///< buffer to store the read results in
