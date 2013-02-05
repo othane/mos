@@ -16,7 +16,7 @@
 
 
 // look up which APB2 perph clk is associated with this pin
-uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
+static uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
 {
 	uint32_t ret;
 
@@ -49,7 +49,7 @@ uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
 			break;
 	}
 
-	// if this pin is for an alternate function then enable alt function clk
+	// enable alt function clock for all pins for now
 	ret |= RCC_APB2Periph_AFIO;
 
 	return ret;
