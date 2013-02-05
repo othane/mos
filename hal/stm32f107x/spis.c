@@ -132,7 +132,6 @@ void spis_init(spis_t *spis)
 	
 	// start spis device
 	SPI_Cmd(spis->channel, ENABLE);
-	SPI_Cmd(SPI3,ENABLE);
 }
 
 
