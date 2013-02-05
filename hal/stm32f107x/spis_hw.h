@@ -25,8 +25,8 @@ struct spis_t
 	gpio_pin_t *nss, *sck, *miso, *mosi;
 
 	// transaction start
-	spis_trans_start_stop trans_start;				///< this is called when nss goes lo starting a new transaction
-	spis_trans_start_stop trans_stop;				///< this is called when nss goes hi ending a current transaction
+	spis_select_cb select_cb;						///< this is called when nss goes lo starting a new transaction
+	spis_deselect_cb deselect_cb;					///< this is called when nss goes hi ending a current transaction
 	
 	// read buffers
 	uint8_t *read_buf;								///< buffer to store the read results in

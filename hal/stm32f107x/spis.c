@@ -12,6 +12,7 @@
 #include <stm32f10x_conf.h>
 #include "hal.h"
 #include "spis_hw.h"
+#include "gpio_hw.h"  // hacking only
 
 
 static void spis_clear_read(spis_t *spis)
@@ -73,6 +74,36 @@ uint8_t spis_irq(spis_t *spis)
 }
 
 
+static void spis_select(gpio_pin_t *pin, void *param)
+{
+	// just run select callback
+	spis_t *spis = (spis_t *)param;
+	if (spis->select_cb != NULL)
+		spis->select_cb(spis);
+}
+
+
+void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb)
+{
+	spis->select_cb = select_cb;
+}
+
+
+static void spis_deselect(gpio_pin_t *pin, void *param)
+{
+	// just run deselect callback
+	spis_t *spis = (spis_t *)param;
+	if (spis->deselect_cb != NULL)
+		spis->deselect_cb(spis);
+}
+
+
+void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb)
+{
+	spis->deselect_cb = deselect_cb;
+}
+
+
 void spis_init(spis_t *spis)
 {
 	SPI_InitTypeDef st_spi_init;
@@ -108,6 +139,10 @@ void spis_init(spis_t *spis)
 	gpio_init_pin(spis->miso);
 	gpio_init_pin(spis->mosi);
 
+	// setup the select / deselect callbacks
+	///@todo we might not want to do this for all spis devs, perhaps there should be a flag in the spis_t
+	gpio_set_falling_edge_event(spis->nss, spis_select, spis);
+	gpio_set_rising_edge_event(spis->nss, spis_deselect, spis);
 
 	// setup the spis isr
 	nvic_init.NVIC_IRQChannel = spis_irq(spis);
@@ -132,18 +167,6 @@ void spis_init(spis_t *spis)
 	
 	// start spis device
 	SPI_Cmd(spis->channel, ENABLE);
-}
-
-
-void spis_set_trans_start(spis_t *spis, spis_trans_start_stop start)
-{
-	///@todo unstub this when etxi is going 
-}
-
-
-void spis_set_trans_stop(spis_t *spis, spis_trans_start_stop stop)
-{
-	///@todo unstub this when etxi is going 
 }
 
 

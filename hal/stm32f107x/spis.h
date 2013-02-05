@@ -27,26 +27,33 @@ void spis_init(spis_t *spis);
 
 
 /**
- * @brief callback called when transaction starts or stops (called on nss edge)
- * @param spis device on which the transaction started or stopped
+ * @brief callback called when chip select goes lo
+ * @param spis device on which the chip select dropped
  */
-typedef void (*spis_trans_start_stop)(spis_t *spis);
+typedef void (*spis_select_cb)(spis_t *spis);
 
 
 /**
- * @brief set the callback called when transaction starts (nss lo)
- * @param spis the device to register this event with
- * @param start call this on transaction start (nss lo)
+ * @brief callback called when chip select goes hi
+ * @param spis device on which the chip select rose
  */
-void spis_set_trans_start(spis_t *spis, spis_trans_start_stop start);
+typedef void (*spis_deselect_cb)(spis_t *spis);
 
 
 /**
- * @brief set the callback called when transaction starts (nss lo)
+ * @brief set the callback called when chip select goes lo
  * @param spis the device to register this event with
- * @param stop call this on transaction stop (nss lo)
+ * @param select called when the chip select line goes lo
  */
-void spis_set_trans_stop(spis_t *spis, spis_trans_start_stop stop);
+void spis_set_select_cb(spis_t *spis, spis_select_cb select_cb);
+
+
+/**
+ * @brief set the callback called when chip select goes hi
+ * @param spis the device to register this event with
+ * @param deselect called when the chip select line goes hi
+ */
+void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb);
 
 
 /**
