@@ -450,10 +450,10 @@ void gpio_set_pin(gpio_pin_t *pin, bool state)
 	// change the pin output
 	if (state)
 		// set hi
-		pin->port->ODR |= pin->cfg.GPIO_Pin;
+		pin->port->BSRR = pin->cfg.GPIO_Pin;
 	else
 		// set lo
-		pin->port->ODR &= ~pin->cfg.GPIO_Pin;
+		pin->port->BRR = pin->cfg.GPIO_Pin;
 }
 
 // this toggles at about 58KHz max, see gpio utest
