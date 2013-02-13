@@ -22,6 +22,7 @@ extern gpio_pin_t gpio_mco;
 extern gpio_pin_t gpio_pa10;
 extern gpio_pin_t gpio_pa15;
 extern gpio_pin_t gpio_led;
+extern gpio_pin_t gpio_spi3_nss;
 
 
 /**
