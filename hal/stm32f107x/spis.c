@@ -155,8 +155,8 @@ void spis_init(spis_t *spis)
 	// init the spis itself
 	SPI_I2S_DeInit(spis->channel);
 	SPI_StructInit(&st_spi_init);
-	st_spi_init.SPI_CPHA = SPI_CPHA_2Edge; 			// clock phase
-	st_spi_init.SPI_CPOL = SPI_CPOL_Low; 			// clock polarity
+	st_spi_init.SPI_CPHA = SPI_CPHA_1Edge; 			// clock phase
+	st_spi_init.SPI_CPOL = SPI_CPOL_High; 			// clock polarity
 	st_spi_init.SPI_DataSize = SPI_DataSize_8b;
 	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	st_spi_init.SPI_FirstBit = SPI_FirstBit_MSB;
