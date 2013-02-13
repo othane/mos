@@ -106,6 +106,13 @@ void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb, void *para
 }
 
 
+void spis_set_error_cb(spis_t *spis, spis_error_cb cb, void *param)
+{
+	spis->error_cb = cb;
+	spis->error_cb_param = param;
+}
+
+
 void spis_init(spis_t *spis)
 {
 	SPI_InitTypeDef st_spi_init;
@@ -166,6 +173,7 @@ void spis_init(spis_t *spis)
 
 	// enable the spis isrs
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_RXNE, ENABLE);
+	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
 	
 	// start spis device
 	SPI_Cmd(spis->channel, ENABLE);
@@ -174,10 +182,29 @@ void spis_init(spis_t *spis)
 
 static void spis_irq_handler(spis_t *spis)
 {
+	bool err = false;
+
 	// sanity check that spis should run
 	if (spis == NULL)
 		// this spis is not setup
 		return;
+
+	// check for errors and report them
+	///@todo maybe crc
+	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
+	{
+		err = true;
+		if (spis->error_cb != NULL)
+			spis->error_cb(spis, SPIS_ERR_OVRRUN, spis->error_cb_param);
+	}
+	if (SPI_I2S_GetITStatus(spis->channel, I2S_IT_UDR) == SET)
+	{
+		err = true;
+		if (spis->error_cb != NULL)
+			spis->error_cb(spis, SPIS_ERR_UNDRUN, spis->error_cb_param);
+	}
+
+	///@todo if there was a error (err == true) we may want to complete and cancel all io with what we got
 	
 	// read phase (read the Rx register)
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_RXNE) == SET)

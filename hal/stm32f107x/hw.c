@@ -46,6 +46,8 @@ spis_t spis3 =
 	SPI3, 	// channel
 	&gpio_spi3_nss, &gpio_spi3_sck, &gpio_spi3_miso, &gpio_spi3_mosi, // pins
 	NULL, NULL, // start stop event
+	NULL, NULL, // start stop event
+	NULL, NULL, // error event
 	NULL, 0, 0, NULL, NULL, // read bufs and flags
 	NULL, 0, 0, NULL, NULL  // write bufs and flags
 };

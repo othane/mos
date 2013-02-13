@@ -57,6 +57,28 @@ void spis_set_deselect_cb(spis_t *spis, spis_deselect_cb deselect_cb, void *para
 
 
 /**
+ * @brief callback when a spis has an error
+ * @param spis spis slave device on which the error occured
+ * @param param parameter passed from the register function to the error callback
+ */
+enum SPIS_ERR
+{
+	SPIS_ERR_UNKNOWN,
+	SPIS_ERR_OVRRUN,
+	SPIS_ERR_UNDRUN,
+};
+typedef void (*spis_error_cb)(spis_t *spis, enum SPIS_ERR ecode, void *param);
+
+
+/**
+ * @brief set the callback called on an spis error like overrun or underrun
+ * @param spis spis slave device to set the error callback on
+ * @param param pass this to the callback if it firres
+ */
+void spis_set_error_cb(spis_t *spis, spis_error_cb cb, void *param);
+
+
+/**
  * @brief callback when a spis read completes
  * @param spis spi slave device on which the read completed
  * @param buf pointer to a buffer with the read results in

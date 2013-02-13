@@ -29,6 +29,10 @@ struct spis_t
 	void *select_cb_param;							///< param passed to the spis_select_cb
 	spis_deselect_cb deselect_cb;					///< this is called when nss goes hi ending a current transaction
 	void *deselect_cb_param;						///< param passed to the spis_deselect_cb
+
+	// error handler
+	spis_error_cb error_cb;							///< this is called when the spis encounters an error
+	void *error_cb_param;							///< param passed to the error_cb 
 	
 	// read buffers
 	uint8_t *read_buf;								///< buffer to store the read results in
