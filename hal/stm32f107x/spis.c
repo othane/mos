@@ -247,7 +247,7 @@ static void spis_irq_handler(spis_t *spis)
 	}
 		
 	// write phase (reload the Tx register if it is empty and the isr is enabled)
-	else if ((SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE) == SET) && (spis->channel->CR2 & SPI_CR2_TXEIE))
+	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE) == SET)
 	{
 		volatile union
 		{
