@@ -157,7 +157,7 @@ void spis_init(spis_t *spis)
 	SPI_StructInit(&st_spi_init);
 	st_spi_init.SPI_CPHA = SPI_CPHA_1Edge; 			// clock phase
 	st_spi_init.SPI_CPOL = SPI_CPOL_High; 			// clock polarity
-	st_spi_init.SPI_DataSize = SPI_DataSize_8b;
+	st_spi_init.SPI_DataSize = SPI_DataSize_16b;
 	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;
 	st_spi_init.SPI_FirstBit = SPI_FirstBit_MSB;
 	st_spi_init.SPI_Mode = SPI_Mode_Slave;
@@ -182,15 +182,28 @@ static void spis_irq_handler(spis_t *spis)
 	// read phase (read the Rx register)
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_RXNE) == SET)
 	{
-	  	uint8_t rx_byte = SPI_I2S_ReceiveData(spis->channel);
+	  	union
+		{
+			uint8_t b[2];
+			uint16_t w;
+		} rx_byte;
+		rx_byte.w = SPI_I2S_ReceiveData(spis->channel);
 		
 		// Rx buffer has data, do we have anywhere and enough space to store it
 		if ((spis->read_buf != NULL) && (spis->read_count < spis->read_buf_len) && (spis->read_buf_len > 0))
-			// buffer the last Rx byte
-			spis->read_buf[spis->read_count] = rx_byte;
-		
+		{
+			// buffer the first Rx byte
+			spis->read_buf[spis->read_count] = rx_byte.b[1];
+
+			// if the buffer is long enough get the second byte
+			if (spis->read_count+1 < spis->read_buf_len)
+				spis->read_buf[spis->read_count + 1] = rx_byte.b[0];
+		}
+	
+		// increment the number of bytes read, do it twice as we possibly read 2 bytes	
 		if (spis->read_count < spis->read_buf_len)
-			// more bytes to read (keep counting)
+			spis->read_count++;
+		if (spis->read_count < spis->read_buf_len)
 			spis->read_count++;
 		
 		if ((spis->read_count == spis->read_buf_len) && (spis->read_buf_len > 0))
@@ -209,17 +222,30 @@ static void spis_irq_handler(spis_t *spis)
 	// write phase (reload the Tx register if it is empty and the isr is enabled)
 	else if ((SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE) == SET) && (spis->channel->CR2 & SPI_CR2_TXEIE))
 	{
-	  	volatile uint8_t tx_byte = 0xCC;	// transmit a fixed pattern if we have nothing to send
+		volatile union
+		{
+			uint8_t b[2];
+			uint16_t w;
+		} tx_byte;
+	  	tx_byte.w = 0xAACC;	// transmit a fixed pattern if we have nothing to send
 		
 		// do we have anything to transmit
 		if ((spis->write_buf != NULL) && (spis->write_count < spis->write_buf_len) && (spis->write_buf_len > 0))
-			tx_byte = spis->write_buf[spis->write_count];
+		{
+			tx_byte.b[1] = spis->write_buf[spis->write_count];
+
+			// if we have enough bytes to send the get the next byte too
+			if (spis->write_count+1 < spis->write_buf_len)
+				tx_byte.b[0] = spis->write_buf[spis->write_count + 1];
+		}
 		
 		// send the data
-		SPI_I2S_SendData(spis->channel, tx_byte);
-				
+		SPI_I2S_SendData(spis->channel, tx_byte.w);
+		
+		// increment the number of bytes written, do it twice as we possibly write 2 bytes	
 		if (spis->write_count < spis->write_buf_len)
-			// more bytes to write, keep counting		  
+			spis->write_count++;
+		if (spis->write_count < spis->write_buf_len)
 			spis->write_count++;
 		
 		if ((spis->write_count == spis->write_buf_len) && (spis->write_buf_len > 0))
@@ -309,8 +335,29 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	// kick off the write by sending the first byte the isr will handle sending the remaining bytes
 	if (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE) == SET)
 	{
-		SPI_I2S_SendData(spis->channel, spis->write_buf[0]);
-		spis->write_count++;
+		volatile union
+		{
+			uint8_t b[2];
+			uint16_t w;
+		} tx_byte;
+		tx_byte.w = 0xAACC;
+		if ((spis->write_buf != NULL) && (spis->write_buf_len > 0))
+		{
+			// send first byte
+			tx_byte.b[1] = spis->write_buf[0];
+			// send second byte if we have it
+			if (spis->write_buf_len > 1)
+				tx_byte.b[0] = spis->write_buf[1];
+		}
+		
+		// send first word
+		SPI_I2S_SendData(spis->channel, tx_byte.w);
+
+		// increment the number of bytes written, do it twice as we possibly write 2 bytes	
+		if (spis->write_count < spis->write_buf_len)
+			spis->write_count++;
+		if (spis->write_count < spis->write_buf_len)
+			spis->write_count++;
 	}
 	
 	// enable the send to complete via isr
