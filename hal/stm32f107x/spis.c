@@ -182,8 +182,6 @@ void spis_init(spis_t *spis)
 
 static void spis_irq_handler(spis_t *spis)
 {
-	bool err = false;
-
 	// sanity check that spis should run
 	if (spis == NULL)
 		// this spis is not setup
@@ -193,18 +191,14 @@ static void spis_irq_handler(spis_t *spis)
 	///@todo maybe crc
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
 	{
-		err = true;
 		if (spis->error_cb != NULL)
 			spis->error_cb(spis, SPIS_ERR_OVRRUN, spis->error_cb_param);
 	}
 	if (SPI_I2S_GetITStatus(spis->channel, I2S_IT_UDR) == SET)
 	{
-		err = true;
 		if (spis->error_cb != NULL)
 			spis->error_cb(spis, SPIS_ERR_UNDRUN, spis->error_cb_param);
 	}
-
-	///@todo if there was a error (err == true) we may want to complete and cancel all io with what we got
 	
 	// read phase (read the Rx register)
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_RXNE) == SET)
