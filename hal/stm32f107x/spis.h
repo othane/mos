@@ -133,5 +133,13 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 void spis_cancel_write(spis_t *spis);
 
 
+/**
+ * @brief check if the spis is selected
+ * @param spis, the slave spi device to check if selected
+ * @return true if selected, otherwise false
+ */
+bool spis_selected(spis_t *spis);
+
+
 #endif
 

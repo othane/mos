@@ -396,3 +396,9 @@ error:
 }
 
 
+bool spis_selected(spis_t *spis)
+{
+	return (!gpio_get_pin(spis->nss));
+}
+
+
