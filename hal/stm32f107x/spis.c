@@ -173,7 +173,8 @@ void spis_init(spis_t *spis)
 
 	// enable the spis isrs
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_RXNE, ENABLE);
-	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
+	///@todo it appears enabling this irs stops all other spi3 isrs ??
+	//SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
 	
 	// start spis device
 	SPI_Cmd(spis->channel, ENABLE);
