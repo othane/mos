@@ -305,6 +305,7 @@ void SPI2_IRQHandler(void)
 void SPI3_IRQHandler(void)
 {
 	spis_irq_handler(spis_irq_list[2]);
+	
 }
 
 
