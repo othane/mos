@@ -12,7 +12,7 @@
 #include <stm32f10x_conf.h>
 #include "hal.h"
 #include "spis_hw.h"
-#include "gpio_hw.h"  // hacking only
+#include "gpio_hw.h"
 
 
 static void spis_clear_read(spis_t *spis)
@@ -305,6 +305,7 @@ void SPI2_IRQHandler(void)
 void SPI3_IRQHandler(void)
 {
 	spis_irq_handler(spis_irq_list[2]);
+	
 }
 
 
