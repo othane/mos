@@ -154,6 +154,7 @@ void spis_init(spis_t *spis)
 	gpio_set_rising_edge_event(spis->nss, spis_deselect, spis);
 
 	// setup the spis isr
+	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	nvic_init.NVIC_IRQChannel = spis_irq(spis);
 	nvic_init.NVIC_IRQChannelPreemptionPriority = 0;
 	nvic_init.NVIC_IRQChannelSubPriority = 1;
