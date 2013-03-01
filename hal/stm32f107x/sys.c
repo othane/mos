@@ -105,7 +105,7 @@ static void sys_log_init(void)
 // disable all interrupts and inc the counter so this can be re-entrant
 void sys_enter_critical_section(void)
 {
-	__disable_irq();
+	//__disable_irq();
 	sys.critical_section_count++;
 
 	// error checking (have we rolled over or something
@@ -123,7 +123,7 @@ void sys_leave_critical_section(void)
 	sys.critical_section_count--;
 	if (sys.critical_section_count <= 0)
 	{
-		__enable_irq();
+		//__enable_irq();
 
 		// in case count get out of sync, log an error, and try to recover by resetting
 		if (sys.critical_section_count < 0)
@@ -183,7 +183,7 @@ void sys_log()
  */
 void HardFault_Handler(void)
 {
-	if (CoreDebug->DHCSR & 0x01)		//is C_DEBUGEN set, is the debugger connected?
+	//if (CoreDebug->DHCSR & 0x01)		//is C_DEBUGEN set, is the debugger connected?
 	{
 		//__breakpoint(0);
 		while (1) {};
