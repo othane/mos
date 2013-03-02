@@ -175,8 +175,7 @@ void spis_init(spis_t *spis)
 
 	// enable the spis isrs
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_RXNE, ENABLE);
-	///@todo it appears enabling this irs stops all other spi3 isrs ??
-	//SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
+	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
 	
 	// start spis device
 	SPI_Cmd(spis->channel, ENABLE);
@@ -259,7 +258,7 @@ static void spis_irq_handler(spis_t *spis)
 			tx_byte.b[1] = spis->write_buf[spis->write_count];
 
 			// if we have enough bytes to send the get the next byte too
-			if (spis->write_count+1 < spis->write_buf_len)
+			if ((spis->write_count+1) < spis->write_buf_len)
 				tx_byte.b[0] = spis->write_buf[spis->write_count + 1];
 		}
 		
@@ -357,7 +356,7 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	spis->write_complete_cb = cb;
 	spis->write_complete_param = param;
 	
-	// kick off the write by sending the first byte the isr will handle sending the remaining bytes
+	// kick off the write by sending the first word the isr will handle sending the remaining bytes
 	if (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE) == SET)
 	{
 		volatile union
