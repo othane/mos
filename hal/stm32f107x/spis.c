@@ -340,6 +340,13 @@ error:
 
 void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, void *param)
 {
+	volatile union
+	{
+		uint8_t b[2];
+		uint16_t w;
+	} tx_byte;
+	tx_byte.w = 0xAACC;
+
 	///@todo more sanity checks
 	if (buf == NULL || len < 1)
 		///@todo invalid input parameters
@@ -357,32 +364,21 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	spis->write_complete_param = param;
 	
 	// kick off the write by sending the first word the isr will handle sending the remaining bytes
-	if (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE) == SET)
+	if ((spis->write_buf != NULL) && (spis->write_buf_len > 0))
 	{
-		volatile union
-		{
-			uint8_t b[2];
-			uint16_t w;
-		} tx_byte;
-		tx_byte.w = 0xAACC;
-		if ((spis->write_buf != NULL) && (spis->write_buf_len > 0))
-		{
-			// send first byte
-			tx_byte.b[1] = spis->write_buf[0];
-			// send second byte if we have it
-			if (spis->write_buf_len > 1)
-				tx_byte.b[0] = spis->write_buf[1];
-		}
-		
-		// send first word
-		SPI_I2S_SendData(spis->channel, tx_byte.w);
-
-		// increment the number of bytes written, do it twice as we possibly write 2 bytes	
-		if (spis->write_count < spis->write_buf_len)
-			spis->write_count++;
-		if (spis->write_count < spis->write_buf_len)
-			spis->write_count++;
+		// send first byte
+		tx_byte.b[1] = spis->write_buf[0];
+		// send second byte if we have it
+		if (spis->write_buf_len > 1)
+			tx_byte.b[0] = spis->write_buf[1];
 	}
+	SPI_I2S_SendData(spis->channel, tx_byte.w); // send first word
+
+	// increment the number of bytes written, do it twice as we possibly write 2 bytes	
+	if (spis->write_count < spis->write_buf_len)
+		spis->write_count++;
+	if (spis->write_count < spis->write_buf_len)
+		spis->write_count++;
 	
 	// enable the send to complete via isr
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_TXE, ENABLE);	
