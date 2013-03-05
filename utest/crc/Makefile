@@ -1,4 +1,9 @@
-all: pc
+all: crc_table crc_utest
 
-pc:
-	gcc -g crc_utest.c ../../hal/stm32f107x/crc.c ../../hal/stm32f107x/crcmodel.c -I../../hal/stm32f107x/ -DCRC_SOFT -DPRINT_RESULT -o crc_utest
+crc_utest: crc_utest.c crc.c crcmodel.c
+	gcc $^ -I./ -DCRC_SOFT -DPRINT_RESULT -o $@
+
+crc_table: crctable.c crcmodel.c 
+	gcc $^ -I./ -o $@
+	./$@
+
