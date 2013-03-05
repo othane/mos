@@ -21,11 +21,13 @@
 
 #ifdef CRC_HARD
 #include <hal.h>
+#else
+#include "crc.h"
 #endif
 
 
 static const char msg[] = "Hello world this is a message to crc";
-static uint32_t msg_known_crc = 0x461F0F2F;
+static uint32_t msg_known_crc = 0xDF750117;
 
 
 void init(void)
