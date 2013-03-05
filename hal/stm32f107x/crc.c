@@ -63,15 +63,22 @@ uint32_t _crc_soft(void *buf, uint32_t len)
 #include <stm32f10x_conf.h>
 #include "hal.h"
 
+static bool clk_running = false;
+
 uint32_t _crc_hard(void *buf, uint32_t len)
 {
 	uint32_t r; 
+
+	// init if needed
+	if (!clk_running)
+		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_CRC, ENABLE);
+	clk_running = true;
 
 	// reset
 	CRC_ResetDR();
 
 	// crc buf
-	r = CRC_CalcBlockCRC(buf, len);
+	r = CRC_CalcBlockCRC((uint32_t *)buf, len >> 2);
 
 	// return result
 	return r;
