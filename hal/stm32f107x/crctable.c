@@ -46,7 +46,7 @@
 #define TB_FILE   "crctable.h"
 #define TB_WIDTH  4
 #define TB_POLY   0x04C11DB7L
-#define TB_REVER  TRUE
+#define TB_REVER  FALSE
 
 /******************************************************************************/
 

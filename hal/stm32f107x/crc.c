@@ -25,31 +25,61 @@
 
 // we use the crc lib embedded in http://www.ross.net/crc/download/crc_v3.txt setup to mimic the stm32 HW see:
 // https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fCRC%20calculation%20in%20software&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=3822
-
 #include <crcmodel.h>
 #include <crctable.h>
 
+
 // this setup mimics the stm32 32bit crc hardware
-cm_t cm = 
+#define CRC_INI
+static cm_t _cm = 
 {
-	32, // width
-	0x04C11DB7, // poly
-	0xFFFFFFFF, // init
-	TRUE, // refin
-	TRUE, // refot
-	0xFFFFFFFF, // xorot
+	32, 			// width
+	0x04C11DB7, 	// poly
+	0xFFFFFFFF, 	// init
+	FALSE, 			// refin
+	FALSE, 			// refot
+	0x00000000, 	// xorot
 };
+
+
+void _stm32_crc_blk_tbl(cm_t *cm, void *buf, uint32_t len)
+{
+	uint32_t words = len / 4;
+	uint32_t *_buf = (uint32_t *)buf;
+
+	while (words--)
+	{
+		int i;
+		uint32_t w = *_buf++;
+		uint8_t b;
+		for (i = 0; i < sizeof(w); i++)
+		{
+			if (cm->cm_refin == FALSE)
+			{
+				b = (uint8_t)((w & 0xFF000000) >> 24);
+				w <<= 8;
+			}
+			else
+			{
+				b = (uint8_t)(w & 0x000000FF);
+				w >>= 8;
+			}
+			cm->cm_reg = crctable[((cm->cm_reg>>24) ^ b) & 0xFFL] ^ (cm->cm_reg << 8);
+		}
+	}
+}
+
 
 uint32_t _crc_soft(void *buf, uint32_t len)
 {
 	// reset
-	cm_ini(&cm);
+	cm_ini(&_cm);
 
-	// crc buf
-	cm_blk(&cm, (uint8_t *)buf, len);
+	// crc buf using the special stm32 crc method
+	_stm32_crc_blk_tbl(&_cm, buf, len);
 
 	// return result
-	return cm_crc(&cm);
+	return cm_crc(&_cm);
 }
 
 #endif
