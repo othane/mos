@@ -132,14 +132,18 @@ static uint32_t crc(void *buf, uint32_t len)
 uint8_t crc8(void *buf, uint32_t len)
 {
 	///@todo can we just take the MSByte of a crc32 for this ?
-	return 0;
+	///@see http://stackoverflow.com/questions/15199232/casting-crc32-to-uint8-t
+	uint8_t c = crc(buf, len);
+	return (uint8_t)(c & 0xFF000000);;
 }
 
 
 uint16_t crc16(void *buf, uint32_t len)
 {
 	///@todo can we just take the MSWord of a crc32 for this ?
-	return 0;
+	///@see http://stackoverflow.com/questions/15199232/casting-crc32-to-uint8-t
+	uint8_t c = crc(buf, len);
+	return (uint16_t)(c & 0xFFFF0000);;
 }
 
 
