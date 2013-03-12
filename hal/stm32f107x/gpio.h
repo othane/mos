@@ -13,7 +13,7 @@
 #ifndef __GPIO__
 #define __GPIO__
 
-
+#include <stdbool.h>
 /**
  * @brief opaque gpio pin type 
  */

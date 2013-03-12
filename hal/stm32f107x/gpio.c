@@ -386,9 +386,6 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 	NVIC_Init(&nvic_init);
 }
 
-
-
-
 void gpio_init_pin(gpio_pin_t *pin)
 {
 	// module should ignore null pins
