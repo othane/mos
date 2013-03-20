@@ -52,14 +52,17 @@ static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 
 
 // crc a 8bit word buffer via the table method
+ulong reflect(ulong v,int b);
 static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 {
 	uint8_t *_buf = (uint8_t *)buf;
 	uint8_t _crc = (uint8_t)h->cm.cm_init;
 	TRACE;
 
+	_crc = (h->cm.cm_refin)?reflect(_crc, 8): _crc;
 	while (len--)
 		_crc = ((uint8_t *)h->table)[_crc ^ *_buf++];
+	_crc = (h->cm.cm_refin)?reflect(_crc, 8): _crc;
 	h->cm.cm_reg = _crc;
 	return cm_crc(&h->cm);
 }

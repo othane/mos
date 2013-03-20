@@ -35,7 +35,7 @@
 
 #define BITMASK(X) (1L << (X))
 #define MASK32 0xFFFFFFFFL
-#define LOCAL static
+#define LOCAL /*static*/
 
 /******************************************************************************/
 
