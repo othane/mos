@@ -159,18 +159,19 @@ static bool crc_init_soft(struct crc_h *h)
 bool crc_init(struct crc_h *h)
 {
 	TRACE;
+
 	// try hardware method first as it is fastest
 	if (h->method == CRC_METHOD_HARD || 
 		h->method == CRC_METHOD_BEST)
 		if (crc_init_hard(h))
-			return h;
+			return true;
 
 	// try table method next as it is still quite fast
 	if (h->method == CRC_METHOD_TABLE_8W || 
 		h->method == CRC_METHOD_TABLE_32W || 
 		h->method == CRC_METHOD_BEST)
 		if(crc_init_table(h))
-			return h;
+			return true;
 
 	// only option is full software method (quite slow)
 	return crc_init_soft(h);
