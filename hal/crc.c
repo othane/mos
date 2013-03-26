@@ -74,7 +74,7 @@ static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 			//b = (uint8_t)(w & 0x000000FF);
 			//w >>= 8;
 			b = (h->cm.cm_refin)? reflect(b, 8): b;
-			_crc = ((uint8_t *)h->table)[((_crc>>24) ^ b) & 0xFFL] ^ (_crc << 8);
+			_crc = ((uint8_t *)h->table)[_crc ^ b];
 			if (--len == 0)
 				goto done;
 		} 
