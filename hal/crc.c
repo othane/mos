@@ -17,34 +17,21 @@
 //#define TRACE 
 
 
+ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (a bit naughty but it works for now)
+
+
 // crc a 32bit word buffer via the table method
 static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 {
-	uint32_t words = len / 4;
-	uint32_t *_buf = (uint32_t *)buf;
+	uint8_t *_buf = (uint8_t *)buf;
 	TRACE;
 
 	cm_ini(&h->cm);
 
-	while (words--)
+	while (len--)
 	{
-		int i;
-		uint32_t w = *_buf++;
-		uint8_t b;
-		for (i = 0; i < sizeof(w); i++)
-		{
-			if (h->cm.cm_refin == FALSE)
-			{
-				b = (uint8_t)((w & 0xFF000000) >> 24);
-				w <<= 8;
-			}
-			else
-			{
-				b = (uint8_t)(w & 0x000000FF);
-				w >>= 8;
-			}
-			h->cm.cm_reg = ((uint32_t *)h->table)[((h->cm.cm_reg>>24) ^ b) & 0xFFL] ^ (h->cm.cm_reg << 8);
-		}
+		uint32_t b = (h->cm.cm_refin)? reflect(*_buf++, 8):*_buf++;
+		h->cm.cm_reg = ((uint32_t *)h->table)[((h->cm.cm_reg>>24) ^ b) & 0xFFL] ^ (h->cm.cm_reg << 8);
 	}
 
 	return cm_crc(&h->cm);
@@ -52,17 +39,17 @@ static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 
 
 // crc a 8bit word buffer via the table method
-ulong reflect(ulong v,int b);
 static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 {
 	uint8_t *_buf = (uint8_t *)buf;
 	uint8_t _crc = (uint8_t)h->cm.cm_init;
 	TRACE;
 
-	_crc = (h->cm.cm_refin)?reflect(_crc, 8): _crc;
 	while (len--)
-		_crc = ((uint8_t *)h->table)[_crc ^ *_buf++];
-	_crc = (h->cm.cm_refin)?reflect(_crc, 8): _crc;
+	{
+		uint32_t b = (h->cm.cm_refin)? reflect(*_buf++, 8):*_buf++;
+		_crc = ((uint8_t *)h->table)[_crc ^ b];
+	}
 	h->cm.cm_reg = _crc;
 	return cm_crc(&h->cm);
 }
@@ -72,6 +59,7 @@ static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 static uint32_t crc_buf_soft(struct crc_h *h, void *buf, uint32_t len)
 {
 	TRACE;
+
 	cm_ini(&h->cm);
 	cm_blk(&h->cm, buf, len);
 	return cm_crc(&h->cm);
@@ -131,14 +119,20 @@ static bool crc_init_table(struct crc_h *h)
 	// we only support certain predefined (and tested) table layouts
 	if (h->cm.cm_width == 32 && h->table_size >= 256*sizeof(uint32_t))
 	{
+		uint32_t refin = h->cm.cm_refin;
+		h->cm.cm_refin = false;
 		h->method = CRC_METHOD_TABLE_32W;
 		gen_table32(h);
+		h->cm.cm_refin = refin;
 		return true;
 	}
 	if (h->cm.cm_width == 8 && h->table_size >= 256*sizeof(uint8_t))
 	{
+		uint32_t refin = h->cm.cm_refin;
+		h->cm.cm_refin = false;
 		h->method = CRC_METHOD_TABLE_8W;
 		gen_table8(h);
+		h->cm.cm_refin = refin;
 		return true;
 	}
 
