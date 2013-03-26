@@ -11,10 +11,14 @@
 
 
 #include "crc.h"
-#include <stdlib.h>
+#include <stdlib.h> // for NULL
+
+#ifdef CRC_TRACE
 #include <stdio.h>
 #define TRACE printf("%s:%i\n", __FUNCTION__, __LINE__);
-//#define TRACE 
+#else
+#define TRACE
+#endif
 
 
 ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (a bit naughty but it works for now)
