@@ -7,7 +7,7 @@
 #define STR(x) STR_EXP(x)
 
 
-#define TYPE uint8_t
+#define TYPE uint32_t
 TYPE tbl[256];
 struct crc_h crc_cfg = 
 {
@@ -16,7 +16,7 @@ struct crc_h crc_cfg =
 		.cm_width = sizeof(TYPE) * 8,
 		.cm_poly = 0x04C11DB7,
 		.cm_init = 0xFFFFFFFF,
-		.cm_refin = true,
+		.cm_refin = false,
 		.cm_refot = false,
 		.cm_xorot = 0x00000000,
 	},
