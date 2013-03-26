@@ -28,6 +28,8 @@
 	// inlining
 	#define force_inline __forceinline							// force this function to inline
 
+	// weak functions
+	#define weak() __weak
 
 #elif (__GNUC__)
 	/* gcc compiler */
@@ -43,6 +45,9 @@
 	// inlining
 	#define force_inline __attribute__((always_inline))				// force this function to inline
 
+	// weak functions
+	#define weak __attribute((weak))
+
 #elif (__IAR_SYSTEMS_ICC__)
 	/* iar compiler */
 	
@@ -56,6 +61,10 @@
 	
 	// inlining
 	#define force_inline											// not supported
+
+	// weak functions
+	#define weak() __weak
+
 #endif
 
 
