@@ -31,7 +31,7 @@ struct crc_h
 	// which method
 	enum
 	{
-		CRC_METHOD_NONE=0,
+		CRC_METHOD_BEST=0,
 		CRC_METHOD_HARD,
 		CRC_METHOD_TABLE_8W,
 		CRC_METHOD_TABLE_32W,
