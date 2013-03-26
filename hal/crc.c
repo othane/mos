@@ -23,17 +23,31 @@ ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (
 // crc a 32bit word buffer via the table method
 static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 {
-	uint8_t *_buf = (uint8_t *)buf;
+	uint32_t *_buf = (uint32_t *)buf;
+	uint32_t w;
+	uint8_t b;
 	TRACE;
 
 	cm_ini(&h->cm);
 
-	while (len--)
+	while (1)
 	{
-		uint32_t b = (h->cm.cm_refin)? reflect(*_buf++, 8):*_buf++;
-		h->cm.cm_reg = ((uint32_t *)h->table)[((h->cm.cm_reg>>24) ^ b) & 0xFFL] ^ (h->cm.cm_reg << 8);
+		uint8_t k = 4;
+		w = *_buf++;
+		while (k--)
+		{
+			b = (uint8_t)((w & 0xFF000000) >> 24);
+			w <<= 8;
+			//b = (uint8_t)(w & 0x000000FF);
+			//w >>= 8;
+			b = (h->cm.cm_refin)? reflect(b, 8): b;
+			h->cm.cm_reg = ((uint32_t *)h->table)[((h->cm.cm_reg>>24) ^ b) & 0xFFL] ^ (h->cm.cm_reg << 8);
+			if (--len == 0)
+				goto done;
+		} 
 	}
 
+done:
 	return cm_crc(&h->cm);
 }
 
@@ -41,15 +55,32 @@ static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 // crc a 8bit word buffer via the table method
 static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 {
-	uint8_t *_buf = (uint8_t *)buf;
-	uint8_t _crc = (uint8_t)h->cm.cm_init;
+	uint32_t *_buf = (uint32_t *)buf;
+	uint32_t w;
+	uint8_t b;
+	uint8_t _crc;
 	TRACE;
 
-	while (len--)
+	_crc = (uint8_t)h->cm.cm_init;
+
+	while (1)
 	{
-		uint32_t b = (h->cm.cm_refin)? reflect(*_buf++, 8):*_buf++;
-		_crc = ((uint8_t *)h->table)[_crc ^ b];
+		uint8_t k = 4;
+		w = *_buf++;
+		while (k--)
+		{
+			b = (uint8_t)((w & 0xFF000000) >> 24);
+			w <<= 8;
+			//b = (uint8_t)(w & 0x000000FF);
+			//w >>= 8;
+			b = (h->cm.cm_refin)? reflect(b, 8): b;
+			_crc = ((uint8_t *)h->table)[((_crc>>24) ^ b) & 0xFFL] ^ (_crc << 8);
+			if (--len == 0)
+				goto done;
+		} 
 	}
+
+done:
 	h->cm.cm_reg = _crc;
 	return cm_crc(&h->cm);
 }
@@ -58,10 +89,30 @@ static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
 // crc anything using the soft method
 static uint32_t crc_buf_soft(struct crc_h *h, void *buf, uint32_t len)
 {
+	uint32_t *_buf = (uint32_t *)buf;
+	uint32_t w;
+	uint8_t b;
 	TRACE;
 
 	cm_ini(&h->cm);
-	cm_blk(&h->cm, buf, len);
+
+	while (1)
+	{
+		uint8_t k = 4;
+		w = *_buf++;
+		while (k--)
+		{
+			b = (uint8_t)((w & 0xFF000000) >> 24);
+			w <<= 8;
+			//b = (uint8_t)(w & 0x000000FF);
+			//w >>= 8;
+			cm_nxt(&h->cm, b);
+			if (--len == 0)
+				goto done;
+		} 
+	}
+
+done:
 	return cm_crc(&h->cm);
 }
 
