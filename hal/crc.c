@@ -21,6 +21,12 @@
 #endif
 
 
+#ifndef weak
+// note we assume gcc style if this is not defined
+#define weak __attribute((weak))
+#endif
+
+
 ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (a bit naughty but it works for now)
 
 
@@ -122,8 +128,7 @@ done:
 
 
 // default handler (this should be overridden if possible)
-///@todo make this weak
-uint32_t crc_buf_hard(struct crc_h *h, void *buf, uint32_t len)
+weak uint32_t crc_buf_hard(struct crc_h *h, void *buf, uint32_t len)
 {
 	TRACE;
 	return 0;
@@ -131,8 +136,7 @@ uint32_t crc_buf_hard(struct crc_h *h, void *buf, uint32_t len)
 
 
 // default handler (this should be overridden if possible)
-///@todo make this weak
-bool crc_init_hard(struct crc_h *h)
+weak bool crc_init_hard(struct crc_h *h)
 {
 	TRACE;
 	return false;
