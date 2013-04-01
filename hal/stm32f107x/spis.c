@@ -14,6 +14,7 @@
 #include "spis_hw.h"
 #include "gpio_hw.h"
 
+volatile uint8_t spi_comm_flag = 0;
 
 static void spis_clear_read(spis_t *spis)
 {
@@ -189,6 +190,9 @@ static void spis_irq_handler(spis_t *spis)
 		// this spis is not setup
 		return;
 
+        if(!spi_comm_flag)
+            spi_comm_flag = 1;
+         
 	// check for errors and report them
 	///@todo maybe crc
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
