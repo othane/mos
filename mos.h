@@ -1,6 +1,6 @@
 /**
  * @file mos.h
- * 
+ *
  * @brief interface to the micro os modules (hal, containers, etc)
  *
  * @author OT

@@ -1,6 +1,6 @@
 /**
  * @file sys.c
- * 
+ *
  * @brief implements the sys module of mos for the stm32f107x cpu
  *
  * @author OT
@@ -14,7 +14,7 @@
 #include "hal.h"
 
 
-/* internal structure used to store system states etc so they are all in 
+/* internal structure used to store system states etc so they are all in
  * one easy place to find. */
 struct SYS_T
 {
@@ -33,7 +33,7 @@ static void sys_clk_init(void)
 
 	// set clocks registers back to defaults (for debugging, st_demo)
 	RCC_DeInit();
-	
+
 	// enable the high speed external osc (HSE) and spin for it to stabilise
 	RCC_HSEConfig(RCC_HSE_ON);
 	HSEStartUpStatus = RCC_WaitForHSEStartUp();
@@ -43,35 +43,35 @@ static void sys_clk_init(void)
 		while (1)
 		{}
 	}
-	
+
 	// Enable Prefetch Buffer
 	FLASH_PrefetchBufferCmd(FLASH_PrefetchBuffer_Enable);
-	
+
 	// Flash 1 wait state
 	FLASH_SetLatency(FLASH_Latency_2);
-	
+
 	// AHB prescaler set to div 1, HCLK = SYSCLK (72MHz)
-	RCC_HCLKConfig(RCC_SYSCLK_Div1); 
+	RCC_HCLKConfig(RCC_SYSCLK_Div1);
 
 	// APB2 (high speed) prescaler set to div 1, APB2 = HCLK
 	RCC_PCLK2Config(RCC_HCLK_Div1);
-	
+
 	// APB1 (low speed) prescaler set to div 2, APB1 = HCLK / 2
 	RCC_PCLK1Config(RCC_HCLK_Div2);
 
 	// Setup the PLLCLK source and pre scaler (25MHz * 5 / 2 = 62MHz)
 	///@note if you change this update the SYS_CLK definition
 	RCC_PREDIV1Config(RCC_PREDIV1_Source_HSE, RCC_PREDIV1_Div2);
-	RCC_PLLConfig(RCC_PLLSource_PREDIV1, RCC_PLLMul_5); 
-	
+	RCC_PLLConfig(RCC_PLLSource_PREDIV1, RCC_PLLMul_5);
+
 	// Enable the PLL and spin for it to be ready
 	RCC_PLLCmd(ENABLE);
 	while(RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == RESET)
-        {}
+	{}
 
 	// Switch the system clock over to the PLL output and spin until it is ready
 	RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
-	while(RCC_GetSYSCLKSource() != 0x08);
+	while(RCC_GetSYSCLKSource() != 0x08) ;
 
 #ifdef DEBUG_MCO
 	/* this is a handy debugging option to output the sys_clk/2 to the MCO p
@@ -185,7 +185,7 @@ void BusFault_Handler(void)
 		//__breakpoint(0);
 		while (1) {};
 	}
-  
+
 }
 
 /**
@@ -255,12 +255,12 @@ void sys_init(void)
  * @brief report the file and line where the assert failed and spin
  * @param  file pointer to the source file name
  * @param  line assert_param error line source number
-*/
+ */
 void assert_failed(uint8_t* file, uint32_t line)
 {
-  /* Infinite loop */
-  while (1)
-  {}
+	/* Infinite loop */
+	while (1)
+	{}
 }
 
 #endif

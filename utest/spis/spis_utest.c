@@ -1,6 +1,6 @@
 /**
  * @file spis_utest.c
- * 
+ *
  * @brief unit test the slave spi hal module
  *
  * This test is designed to check the spi slave module.
@@ -24,7 +24,7 @@ void spis3_select(spis_t *spis, void *param)
 
 void spis3_deselect(spis_t *spis, void *param)
 {
-	sys_nop();    
+	sys_nop();
 }
 
 
@@ -50,7 +50,7 @@ void read_complete(spis_t *spis, void *buf, uint16_t len, void *param);
 #ifdef TEST1
 void write_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	int k;
+	int k;
 	wcount++;
 	///@todo for some reason we need this delay or the io goes bad ?!?!?
 	for (k = 500; k > 0; k--)
@@ -63,11 +63,11 @@ void write_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 
 void read_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	rcount++;
-  	if (((uint8_t *)buf)[1] != 0x01)
-	  sys_nop();
-	
-	// echo back	
+	rcount++;
+	if (((uint8_t *)buf)[1] != 0x01)
+		sys_nop();
+
+	// echo back
 	memcpy(&write_buf[READ_BUF_LEN], buf, len);
 }
 
@@ -75,7 +75,7 @@ void test_init(void)
 {
 	// kick off io
 	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
-	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);  
+	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
 }
 #endif
 
@@ -83,20 +83,20 @@ void test_init(void)
 #ifdef TEST2
 void test_init(void)
 {
-  	// read the first 3 bytes
-	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);  
+	// read the first 3 bytes
+	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
 }
 
 void read_complete2(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	rcount++;
+	rcount++;
 	// read the first 3 bytes
 	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
 }
 
 void read_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	rcount++;
+	rcount++;
 	// read remaining 3 bytes
 	spis_read(&spis3, &read_buf[READ_BUF_LEN], READ_BUF_LEN, read_complete2, NULL);
 }
@@ -112,14 +112,14 @@ void test_init(void)
 
 void write_complete2(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	rcount++;
+	rcount++;
 	// write half of the fixed pattern
 	spis_write(&spis3, write_buf, 3, write_complete, NULL);
 }
 
 void write_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 {
-  	rcount++;
+	rcount++;
 	// write the rest of the fixed pattern
 	spis_write(&spis3, &write_buf[3], 3, write_complete2, NULL);
 }

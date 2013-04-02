@@ -23,12 +23,12 @@ bool nvm_erase(void *addr, uint32_t len)
 	{
 		case FLASH_COMPLETE:
 			return true;
-		
+
 		case FLASH_BUSY:
 		case FLASH_ERROR_PG:
 		case FLASH_ERROR_WRP:
 		case FLASH_TIMEOUT:
-		default:		  
+		default:
 			///@todo error message
 			return false;
 	}
@@ -47,20 +47,20 @@ bool nvm_read(void *dst, const void *src, uint32_t len)
 static bool flash_wait(void)
 {
 	FLASH_Status status = FLASH_BUSY;
-	
+
 	while (status == FLASH_BUSY)
 		status = FLASH_WaitForLastOperation(FLASH_WRITE_TIMEOUT);
-	
+
 	if (status != FLASH_COMPLETE)
 		///todo error!
 		return false;
-	
+
 	return true;
 }
 
 
 static bool flash_write_word(uint16_t *dst, uint16_t *src)
-{	
+{
 	// check if the bytes already match then don't change them (I think we might even get an error)
 	if (*dst == *src)
 		return true;
@@ -86,7 +86,7 @@ static bool flash_write_word(uint16_t *dst, uint16_t *src)
 	// verify (now they should be the same)
 	if (*dst != *src)
 		///@todo verify error
-		return false; // verification error
+		return false;  // verification error
 
 	// success
 	return true;
@@ -129,7 +129,7 @@ bool nvm_write(void *dst, const void *src, uint32_t len)
 			return false;
 	}
 
-	// job done !	
+	// job done !
 	return true;
 }
 

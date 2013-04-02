@@ -112,14 +112,14 @@ void spis_cancel_read(spis_t *spis);
  * @brief callback when a spis write completes
  * @param spis spis slave device on which the write completed
  * @param buf pointer to a buffer written
- * @param len number of bytes actually written 
+ * @param len number of bytes actually written
  * @param param completion parameter passed into the call to spis_write
  */
 typedef void (*spis_write_complete)(spis_t *spis, void *buf, uint16_t len, void *param);
 
 
 /**
- * @brief load data to write out the spis bus asynchronously 
+ * @brief load data to write out the spis bus asynchronously
  * @param spis spis slave device to start writing to
  * @param buf buffer to send
  * @param len number of bytes in the buffer (if spis transaction continues return empty bits)

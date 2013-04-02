@@ -1,6 +1,6 @@
 /**
  * @file sys.h
- * 
+ *
  * @brief interface to the system level functions
  *
  * @author OT
@@ -69,7 +69,7 @@ enum SYS_ERR sys_get_error(void);
 
 
 /**
- * @brief burn a few intructions 
+ * @brief burn a few intructions
  */
 void sys_nop(void);
 
