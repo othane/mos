@@ -15,7 +15,7 @@
 
 
 /**
- * @brief opaque gpio pin type 
+ * @brief opaque gpio pin type
  */
 typedef struct gpio_pin_t gpio_pin_t;
 

@@ -1,9 +1,9 @@
 /**
  * @file nvm_utest.c
- * 
+ *
  * @brief unit test the nvm hal module
  *
- * This test will read the initial "hello" message in flash 
+ * This test will read the initial "hello" message in flash
  * and change it to "world". Then the debugger can connect at
  * any time to check flash contains "world"
  *
@@ -30,7 +30,7 @@ void init(void)
 void main(void)
 {
 	init();
-	
+
 	// on first boot check the value in msg, if it is "hello" change it to
 	// "world" and reboot
 	nvm_read(msg_ram, msg, 32);
@@ -40,7 +40,7 @@ void main(void)
 		nvm_write((void*)msg, "world", 5);
 		sys_reset();
 	}
-	
+
 	while (1)
 	{
 	}

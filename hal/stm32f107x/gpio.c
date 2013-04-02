@@ -285,8 +285,8 @@ void exti_isr(uint8_t line_start, uint8_t line_end)
 
 			// clear the irq for this line
 			EXTI_ClearITPendingBit(lines[l]);
-			
-			// if pin is valid, what type of edge was generated	
+
+			// if pin is valid, what type of edge was generated
 			if (pin != NULL)
 			{
 				if ((pin->port->IDR & pin->cfg.GPIO_Pin) == 0)
@@ -362,15 +362,15 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 	EXTI_InitTypeDef exti_init;
 	NVIC_InitTypeDef nvic_init;
 	uint32_t exti_line = gpio_pin_to_exti_line(pin);
-	
+
 	// set pin to alternate function EXTI mode
 	GPIO_EXTILineConfig(gpio_pin_to_port_source(pin), gpio_pin_to_pin_source(pin));
 
 	// Configure EXTIx line to trigger irq
 	if ((trig == EXTI_Trigger_Falling) && (EXTI->RTSR & exti_line))
-		trig = EXTI_Trigger_Rising_Falling; // was already configured as rising so set to both
+		trig = EXTI_Trigger_Rising_Falling;  // was already configured as rising so set to both
 	else if ((trig == EXTI_Trigger_Rising) && (EXTI->FTSR & exti_line))
-		trig = EXTI_Trigger_Rising_Falling; // was already configured as falling so set to both
+		trig = EXTI_Trigger_Rising_Falling;  // was already configured as falling so set to both
 	exti_init.EXTI_Line = exti_line;
 	exti_init.EXTI_Mode = EXTI_Mode_Interrupt;
 	exti_init.EXTI_Trigger = trig;
@@ -378,7 +378,7 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 	EXTI_Init(&exti_init);
 
 	// Enable and set EXTI9_5 Interrupt to the lowest priority
-	save_pin_for_irq(pin);	///@todo this may need to warn if another pin is registered with this irq in case the caller forgets the pins share irq's
+	save_pin_for_irq(pin);  ///@todo this may need to warn if another pin is registered with this irq in case the caller forgets the pins share irq's
 	nvic_init.NVIC_IRQChannel = gpio_pin_to_exti_irq(pin);
 	nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0F;
 	nvic_init.NVIC_IRQChannelSubPriority = 0x0F;
@@ -400,7 +400,7 @@ void gpio_init_pin(gpio_pin_t *pin)
 	RCC_APB2PeriphClockCmd(pin_to_rcc_periph(pin), ENABLE);
 	RCC_APB2PeriphResetCmd(pin_to_rcc_periph(pin), DISABLE);
 
-	// setup the pin configurations 
+	// setup the pin configurations
 	GPIO_Init(pin->port, &pin->cfg);
 }
 
