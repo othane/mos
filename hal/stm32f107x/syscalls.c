@@ -39,9 +39,6 @@ caddr_t _sbrk(int incr)
  
 int _write(int file, char *ptr, int len)
 {
-	int i;
-	for (i = 0; i < len; i++)
-		ITM_SendChar((uint32_t)ptr[i]);
-	return i;
+	return 0;
 }
 
