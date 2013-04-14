@@ -14,7 +14,29 @@
 #include "hal.h"
 
 
-bool validate_prog(bootstrap_prog_header *header)
+void bootstrap_set_boot_pid(uint16_t pid)
+{
+	PWR_BackupAccessCmd(ENABLE);
+	// BKP_DR1 is reserved for boot pid
+	BKP_WriteBackupRegister(BKP_DR1, pid);
+	PWR_BackupAccessCmd(DISABLE);
+}
+
+
+uint16_t bootstrap_get_boot_pid(void)
+{
+	uint16_t pid;
+
+	PWR_BackupAccessCmd(ENABLE);
+	// BKP_DR1 is reserved for boot pid
+	pid = BKP_ReadBackupRegister(BKP_DR1);
+	PWR_BackupAccessCmd(DISABLE);
+
+	return pid;
+}
+
+
+bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 {
 	// null header is invalid
 	if (header == NULL)
@@ -35,32 +57,30 @@ bool validate_prog(bootstrap_prog_header *header)
 }
 
 
-static void set_boot_addr(void *addr)
+/**
+ * @brief boot the program described in the program header
+ * @param header points to a header describing the program to boot
+ */
+typedef void (*vecttab)(void);
+vecttab isr_vector_ram[128] at_symbol(".isr_vector_ram");
+void boot(const bootstrap_prog_header *header)
 {
-	union
-	{
-		uint16_t s[2];
-		uint32_t *p;
-	} _addr;
-	_addr.p = addr;
+	uint8_t *dst, *src;
+	uint32_t k;
 
-	PWR_BackupAccessCmd(ENABLE);
-	// BKP_DR[1:2] are reserved for boot address
-	BKP_WriteBackupRegister(BKP_DR1, _addr.s[0]);
-	BKP_WriteBackupRegister(BKP_DR2, _addr.s[1]);
-	PWR_BackupAccessCmd(DISABLE);
-}
+	// do I need this (copied from examples)
+	sys_enter_critical_section();
 
+	// copy vector table for program from flash to ram (do not use memcpy so we dont need clib)
+	dst = (uint8_t *)isr_vector_ram;
+	src = (uint8_t *)header->isr_vector;
+	for (k = 0; k < sizeof(isr_vector_ram); k++)
+		*dst++ = *src++;
 
-bool bootstrap_switch(bootstrap_prog_header *header)
-{
-	if (!validate_prog(header))
-		return false;
+	// set cpu to run vector table from ram
+	NVIC_SetVectorTable(NVIC_VectTab_RAM, 0);
 
-	set_boot_addr(header);
-	sys_reset();
-
-	// just for completness (we will never acutally return as we reset above)
-	return true;
+	// start program (this will run its startup and toast our stack etc)
+	isr_vector_ram[1]();	
 }
 

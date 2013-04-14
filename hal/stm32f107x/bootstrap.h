@@ -19,11 +19,11 @@
 packed_start
 packed(struct) bootstrap_prog_header
 {
-	uint32_t crc;         // crc32 over header and program minus the crc word
-	uint32_t len;         // size of this header and program
-	uint8_t  type;        // header type, prog_header in this case (this is just a unique code to ensure this header is intended to describe a prog as other headers may exist)
-	void	 *isr_vector; // points to the start of the programs isr_vector table
-	uint8_t  pid;	      // program id number
+	uint32_t crc;         /**< crc32 over header and program minus the crc word */
+	uint32_t len;         /**< size of this header and program */
+	uint8_t  type;        /**< header type, prog_header in this case (this is just a unique code to ensure this header is intended to describe a prog as other headers may exist) */
+	void	 *isr_vector; /**< points to the start of the programs isr_vector table */
+	uint8_t  pid;	      /**< program id number (1...65536, pid=0 is the bootstrap) */
 };
 packed_end
 
@@ -33,8 +33,21 @@ typedef struct bootstrap_prog_header bootstrap_prog_header;
 
 
 // use these to select applications to boot
-extern const bootstrap_prog_header *bootstrap_bootloader_header;
 extern const bootstrap_prog_header *bootstrap_program_headers[];
+
+
+/**
+ * @brief set the pid of the program to start on next reboot
+ * @param pid program id to start on reboot
+ */
+void bootstrap_set_boot_pid(uint16_t pid);
+
+
+/**
+ * @brief get the pid of the program to start
+ * @return pid program id to start 
+ */
+uint16_t bootstrap_get_boot_pid(void);
 
 
 /**
@@ -42,15 +55,21 @@ extern const bootstrap_prog_header *bootstrap_program_headers[];
  * @param header points to a program header for the program to check
  * @return true if len > 0, type == BOOTSTRAP_PROG_HEADER, crc match; otherwise false
  */
-bool validate_prog(bootstrap_prog_header *header);
+bool bootstrap_validate_prog(const bootstrap_prog_header *header);
 
 
 /**
- * @brief reboot into bootstrap and run this program
- * @param header points to a program header for the program to start
- * @return 
+ * @brief boot the program described in the program header
+ * @param header points to a header describing the program to boot
  */
-bool bootstrap_switch(bootstrap_prog_header *header);
+void boot(const bootstrap_prog_header *header);
+
+
+/**
+ * @brief restart and run the program with the given pid
+ * @param pid program ID to start
+ */
+void bootstrap_switch(int pid);
 
 
 #endif
