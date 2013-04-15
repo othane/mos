@@ -65,17 +65,17 @@ typedef void (*vecttab)(void);
 vecttab isr_vector_ram[128] at_symbol(".isr_vector_ram");
 void boot(const bootstrap_prog_header *header)
 {
-	uint8_t *dst, *src;
+	vecttab *dst, *src;
 	uint32_t k;
 
 	// do I need this (copied from examples)
 	sys_enter_critical_section();
 
 	// copy vector table for program from flash to ram (do not use memcpy so we dont need clib)
-	dst = (uint8_t *)isr_vector_ram;
-	src = (uint8_t *)header->isr_vector;
-	for (k = 0; k < sizeof(isr_vector_ram); k++)
-		*dst++ = *src++;
+	dst = isr_vector_ram;
+	src = (vecttab *)header->isr_vector;
+	for (k = 0; k < 128; k++)
+		dst[k] = src[k];
 
 	// set cpu to run vector table from ram
 	NVIC_SetVectorTable(NVIC_VectTab_RAM, 0);
