@@ -75,6 +75,13 @@ void sys_nop(void);
 
 
 /**
+ * @brief spin for given number of ms
+ * @param time number of ms to spin
+ */
+void sys_spin(uint32_t time);
+
+
+/**
  * @brief Initialise the hal system level
  * @note call this first thing on start-up
  */

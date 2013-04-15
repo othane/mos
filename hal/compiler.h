@@ -57,7 +57,7 @@
 	#define packed(type) __packed type                              // pack this object (ie struct etc)
 
 	// placement (ram/rom/etc)
-	#define at_symbol(sym)                                          // place a object (ie struct var etc) at a position in code (not available yet)
+	#define at_symbol(sym) @ sym                                    // place a object (ie struct var etc) at a position in code (not available yet)
 
 	// inlining
 	#define force_inline                                            // not supported
