@@ -31,13 +31,14 @@ ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (
 
 
 // crc a 32bit word buffer via the table method
-static uint32_t crc_32w_buf_table(struct crc_h *h, void *buf, uint32_t len)
+static uint32_t crc_32w_buf_table(struct crc_h *h, const void *buf, uint32_t len)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
 	uint8_t b;
 	TRACE;
 
+	// init crc lib
 	cm_ini(&h->cm);
 
 	while (1)
@@ -63,7 +64,7 @@ done:
 
 
 // crc a 8bit word buffer via the table method
-static uint8_t crc_8w_buf_table(struct crc_h *h, void *buf, uint32_t len)
+static uint8_t crc_8w_buf_table(struct crc_h *h, const void *buf, uint32_t len)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
@@ -97,13 +98,14 @@ done:
 
 
 // crc anything using the soft method
-static uint32_t crc_buf_soft(struct crc_h *h, void *buf, uint32_t len)
+static uint32_t crc_buf_soft(struct crc_h *h, const void *buf, uint32_t len)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
 	uint8_t b;
 	TRACE;
 
+	// init crc lib
 	cm_ini(&h->cm);
 
 	while (1)
@@ -128,7 +130,7 @@ done:
 
 
 // default handler (this should be overridden if possible)
-weak uint32_t crc_buf_hard(struct crc_h *h, void *buf, uint32_t len)
+weak uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len)
 {
 	TRACE;
 	return 0;
@@ -231,7 +233,7 @@ bool crc_init(struct crc_h *h)
 }
 
 
-uint32_t crc_buf(struct crc_h *h, void *buf, uint32_t len)
+uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len)
 {
 	switch (h->method)
 	{

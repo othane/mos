@@ -14,6 +14,7 @@
 #define __CRC__
 
 
+// we use the crc lib embedded in http://www.ross.net/crc/download/crc_v3.txt
 #include "crcmodel.h"
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,7 +44,7 @@ struct crc_h
 bool crc_init(struct crc_h *h);
 
 
-uint32_t crc_buf(struct crc_h *h, void *buf, uint32_t len);
+uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len);
 
 
 #endif
