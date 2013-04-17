@@ -40,8 +40,10 @@ caddr_t _sbrk(int incr)
 int _write(int file, char *ptr, int len)
 {
 	int i;
+	#if 0
 	for (i = 0; i < len; i++)
 		ITM_SendChar((uint32_t)ptr[i]);
+	#endif
 	return i;
 }
 
