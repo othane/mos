@@ -25,8 +25,8 @@
 #endif
 
 
-static const char msg[] = "Hello world this is a message to crc";
-static uint32_t msg_known_crc = 0xb3c8cbe8;
+static const char msg[40] = "Hello world this is a message to crc\x00\x00\x00\x00";
+static uint32_t known_msg_crc = 0xb3c8cbe8;
 uint32_t crc_tbl[256];
 struct crc_h h =
 {
@@ -35,7 +35,6 @@ struct crc_h h =
 	sizeof(crc_tbl),
 	CRC_METHOD_BEST,
 };
-bool result = false;
 
 
 void init(void)
@@ -43,7 +42,6 @@ void init(void)
 	#ifdef EMBEDDED
 	sys_init();
 	#endif
-
 }
 
 
@@ -62,24 +60,16 @@ uint32_t run_crc(void)
 	crc_init(&h);
 	crc = crc_buf(&h, msg, len);
 	
-	// check unit test results
-	if (crc == msg_known_crc)
-		result = true;
-	#ifdef PRINT_RESULT
-	if (result)
-		printf("test passed:\n");
-	else
-		printf("test failed:\n");
-	printf("crc = 0x%.4X%\n", crc);
-	#endif
-	
 	return crc;
 }
 
 
+#define CRC_MATCH(crc) ((crc == known_msg_crc)? 'p': 'f')
 int main(void)
 {
-	uint32_t crc_soft, crc_tab, crc_hard;
+	uint32_t crc_soft, crc_tab, crc_best;
+	int i;
+	char res;
 
 	init();
 	
@@ -88,7 +78,31 @@ int main(void)
 	h.method = CRC_METHOD_TABLE_32W;
 	crc_tab  = run_crc();
 	h.method = CRC_METHOD_BEST;
-	crc_hard = run_crc();
+	crc_best = run_crc();
+
+	#ifdef PRINT_RESULT
+	printf("msg = ");
+	for (i = 0; i < sizeof(msg); i++)
+	{
+		if (msg[i] < 32 || msg[i] > 126)
+			printf("\\x%.2X", msg[i]);
+		else
+			printf("%c", msg[i]);
+	}
+	printf("\n");
+	printf("len = %d\n", sizeof(msg));
+	res = CRC_MATCH(crc_soft);
+	printf("crc_soft = 0x%.4X [%c]\n", crc_soft, res);
+	res = CRC_MATCH(crc_tab);
+	printf("crc_tab= 0x%.4X [%c]\n", crc_tab, res);
+	res = CRC_MATCH(crc_best);
+	printf("crc_best= 0x%.4X [%c]\n", crc_best, res);
+	printf("[crc_best method: %d]\n", h.method);
+	res = 'f';
+	if (crc_soft == crc_tab == crc_best == known_msg_crc)
+		res = 'p';
+	printf("\ntest result %c\n\n", res);
+	#endif
 
 	#ifdef EMBEDDED 
 	// done	
