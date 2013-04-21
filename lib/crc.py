@@ -5,12 +5,21 @@
 import sys
 import ctypes
 import math
+import os
+import inspect
+
 
 # load library
 if sys.platform == "win32":
-    libname = "crc.dll"
+	libname = "crc.dll"
 else:
-    libname = "libcrc.so"
+	libname = "libcrc.so"
+	# below is just hacks to get around LD_LIBRARY_PATH stuff
+	thisfile = inspect.getfile(inspect.currentframe())
+	thisdir = os.path.dirname(os.path.abspath(thisfile))
+	thisdir = thisdir + '/'
+	if os.path.exists(thisdir + libname):
+		libname = thisdir + libname
 libcrc = ctypes.cdll.LoadLibrary(libname)
 
 # basic type alias'
