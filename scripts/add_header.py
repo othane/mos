@@ -5,8 +5,27 @@ from collections import namedtuple
 import sys
 import os
 import StringIO
+import imp
+crc = imp.load_source('crc', './mos/lib/crc.py')
 
+header_format = '<LLBLB'
+global header_addr
 
+def ih2header(ih):
+	''' convert a intel hex file object to a mos program header '''
+	global header_addr
+	header_raw = struct.unpack(header_format, ih.gets(header_addr, 14))
+	header = namedtuple('header', 'crc len type isr_vector pid')
+	header = header._asdict(header._make(header_raw))
+	return header
+
+def header2ih(ih, header):
+	''' convert a intel hex file object to a mos program header '''
+	global header_addr
+	header_new = struct.pack(header_format, *header.values())
+	ih.puts(header_addr, header_new)
+	return ih
+	
 def show_help():
 	print("Usage: %s [-h|<filename>]" % sys.argv[0])
 
@@ -21,25 +40,31 @@ elif not os.path.exists(sys.argv[1]):
 	sys.exit("Unable open %s" % sys.argv[1])
 filename = sys.argv[1]
 
+
 # open the full program (open via StringIO so we can write back to filename if desired)
-prog_full = IntelHex(StringIO.StringIO(open(filename, "r").read()))
+prog = IntelHex(StringIO.StringIO(open(filename, "r").read()))
+header_addr = prog.minaddr() # all programs require there header to be located at the start
 
 # read out the header
-header_format = '<LLBLB'
-header_addr = prog_full.minaddr() # all programs require there header to be located at the start
-header_raw = struct.unpack(header_format, prog_full.gets(header_addr, 14))
-header = namedtuple('header', 'crc len type isr_vector pid')
-header = header._asdict(header._make(header_raw))
+header = ih2header(prog)
 
 # debug
 import copy
 header_orig = copy.deepcopy(header)
 
-# update the header
-header['len'] = prog_full.maxaddr() - prog_full.minaddr()
-header['crc'] = 0 #@todo
+# update the header len
+l = prog.maxaddr() - prog.minaddr() + 1
+header['len'] = l
+prog = header2ih(prog, header) # put the length back into the intel hex file for crc
+
+# update the header crc (note we do no include the CRC word in the CRC)
+crc_start_addr = prog.minaddr() + 4
+buf = prog.tobinstr(start=crc_start_addr, pad=0xff)
+crc.crc_init(crc.stm32f10x_crc_h)
+crc = crc.crc_buf(crc.stm32f10x_crc_h, buf, len(buf)) & 0xffffffff
+header['crc'] = crc
+prog = header2ih(prog, header) # put the crc back into the intel hex file so we can write it out
 
 # write header back to hex file
-prog_full.puts(header_addr, struct.pack(header_format, *header.values()))
-prog_full.write_hex_file(sys.stdout)
+prog.write_hex_file(sys.stdout)
 

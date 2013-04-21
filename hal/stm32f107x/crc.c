@@ -15,18 +15,25 @@
 #include "hal.h"
 
 
-// this setup mimics the stm32 32bit crc hardware
-// see: https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fCRC%20calculation%20in%20software&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=3822
-const static cm_t cm_stm32f107x = 
+struct crc_h stm32f10x_crc_h =
 {
-	32, 			// width
-	0x04C11DB7, 	// poly
-	0xFFFFFFFF, 	// init
-	FALSE, 			// refin
-	FALSE, 			// refot
-	0, 				// xorot
+	// this setup mimics the stm32 32bit crc hardware
+	// see: https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fCRC%20calculation%20in%20software&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=3822
+	{
+		32, 			// width
+		0x04C11DB7, 	// poly
+		0xFFFFFFFF, 	// init
+		FALSE, 			// refin
+		FALSE, 			// refot
+		0, 				// xorot
 
-	0,				// working reg (irgnore this in cmp)
+		0,				// working reg (irgnore this in cmp)
+	},
+
+	NULL,
+	0,
+	
+	CRC_METHOD_HARD,
 };
 
 
@@ -80,7 +87,7 @@ bool crc_init_hard(struct crc_h *h)
 	bool result = false;
 
 	// if the cm config matches the hardware we are good to go !!
-	result = cm_t_compare(&h->cm, &cm_stm32f107x);
+	result = cm_t_compare(&h->cm, &stm32f10x_crc_h.cm);
 
 	// start crc hw clock if needed
 	if (result && !clk_running)

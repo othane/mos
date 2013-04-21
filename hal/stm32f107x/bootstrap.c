@@ -36,8 +36,19 @@ uint16_t bootstrap_get_boot_pid(void)
 }
 
 
+static void crc_setup(void)
+{
+	static bool do_crc_init = true;
+	if (do_crc_init == true)
+		crc_init(&stm32f10x_crc_h);
+	do_crc_init = false;
+}
+
+
 bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 {
+	uint32_t crc;
+
 	// null header is invalid
 	if (header == NULL)
 		return false;
@@ -51,7 +62,10 @@ bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 		return false;
 	
 	// check the crc
-	///@todo do this when crc branch is merged
+	crc_setup();
+	crc = crc_buf(&stm32f10x_crc_h, &header->len, header->len - sizeof(header->crc));
+	if (header->crc != crc)
+		return false;
 	
 	return true;
 }

@@ -25,6 +25,7 @@
 #include "gpio.h"
 #include "spis.h"
 #include "nvm.h"
+#include "crc.h"
 #include "bootstrap.h"
 
 #ifndef NOHW_H
