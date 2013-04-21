@@ -65,12 +65,5 @@ bool bootstrap_validate_prog(const bootstrap_prog_header *header);
 void boot(const bootstrap_prog_header *header);
 
 
-/**
- * @brief restart and run the program with the given pid
- * @param pid program ID to start
- */
-void bootstrap_switch(int pid);
-
-
 #endif
 
