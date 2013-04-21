@@ -78,8 +78,9 @@
 #ifndef DONE_STYLE
 
 typedef unsigned long   ulong;
-typedef unsigned        bool;
 typedef unsigned char * p_ubyte_;
+
+#include <stdbool.h>
 
 #ifndef TRUE
 #define FALSE 0
