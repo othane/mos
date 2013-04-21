@@ -51,21 +51,21 @@ export CPFLAGS
 all: $(PRJ_FULL)
 	echo $(PRJ_FULL)
 
-$(PRJ): ../../hal/libhal.so $(OBJS)
+$(PRJ): ../../lib/libcrc.so $(OBJS)
 	echo $(PRJ_FULL)
 	$(CC) $(OBJS) -L../../lib -lcrc -o $@
 
 $(PRJ).elf: ../../hal/libhal.o ../../lib/lib.o $(OBJS) $(LDSCRIPT)
 	$(CC) $(OBJS) ../../hal/libhal.o ../../lib/lib.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
 
-../../hal/libhal.so:
+../../lib/libcrc.so:
 	make -C ../../lib/ libcrc.so
-
-../../hal/libhal.o:
-	make -C ../../hal
 
 ../../lib/lib.o:
 	make -C ../../lib
+
+../../hal/libhal.o:
+	make -C ../../hal
 
 %.hex: %.elf
 	$(BIN) $< $@
