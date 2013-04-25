@@ -63,7 +63,7 @@ bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 	
 	// check the crc
 	crc_setup();
-	crc = crc_buf(&stm32f10x_crc_h, &header->len, header->len - sizeof(header->crc));
+	crc = crc_buf(&stm32f10x_crc_h, &header->len, header->len - sizeof(header->crc), true);
 	if (header->crc != crc)
 		return false;
 	
