@@ -31,7 +31,7 @@ ulong reflect(ulong v,int b); // grab the reflect method from the crcmodel lib (
 
 
 // crc a 32bit word buffer via the table method
-static uint32_t crc_32w_buf_table(struct crc_h *h, const void *buf, uint32_t len)
+static uint32_t crc_32w_buf_table(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
@@ -39,7 +39,8 @@ static uint32_t crc_32w_buf_table(struct crc_h *h, const void *buf, uint32_t len
 	TRACE;
 
 	// init crc lib
-	cm_ini(&h->cm);
+	if (reset)
+		cm_ini(&h->cm);
 
 	while (1)
 	{
@@ -64,15 +65,16 @@ done:
 
 
 // crc a 8bit word buffer via the table method
-static uint8_t crc_8w_buf_table(struct crc_h *h, const void *buf, uint32_t len)
+static uint8_t crc_8w_buf_table(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
 	uint8_t b;
-	uint8_t _crc;
+	uint8_t _crc = h->cm.cm_reg;
 	TRACE;
 
-	_crc = (uint8_t)h->cm.cm_init;
+	if (reset)
+		_crc = (uint8_t)h->cm.cm_init;
 
 	while (1)
 	{
@@ -98,7 +100,7 @@ done:
 
 
 // crc anything using the soft method
-static uint32_t crc_buf_soft(struct crc_h *h, const void *buf, uint32_t len)
+static uint32_t crc_buf_soft(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	uint32_t *_buf = (uint32_t *)buf;
 	uint32_t w;
@@ -106,7 +108,8 @@ static uint32_t crc_buf_soft(struct crc_h *h, const void *buf, uint32_t len)
 	TRACE;
 
 	// init crc lib
-	cm_ini(&h->cm);
+	if (reset)
+		cm_ini(&h->cm);
 
 	while (1)
 	{
@@ -130,7 +133,7 @@ done:
 
 
 // default handler (this should be overridden if possible)
-weak uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len)
+weak uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	TRACE;
 	return 0;
@@ -215,6 +218,9 @@ bool crc_init(struct crc_h *h)
 {
 	TRACE;
 
+	// reset the cm (only needed for table and soft but it doesnt hurt for hard)
+	cm_ini(&h->cm);
+
 	// try hardware method first as it is fastest
 	if (h->method == CRC_METHOD_HARD || 
 		h->method == CRC_METHOD_BEST)
@@ -233,18 +239,18 @@ bool crc_init(struct crc_h *h)
 }
 
 
-uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len)
+uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	switch (h->method)
 	{
 		case CRC_METHOD_SOFT:
-			return crc_buf_soft(h, buf, len);
+			return crc_buf_soft(h, buf, len, reset);
 		case CRC_METHOD_HARD:
-			return crc_buf_hard(h, buf, len);
+			return crc_buf_hard(h, buf, len, reset);
 		case CRC_METHOD_TABLE_8W:
-			return crc_8w_buf_table(h, buf, len);
+			return crc_8w_buf_table(h, buf, len, reset);
 		case CRC_METHOD_TABLE_32W:
-			return crc_32w_buf_table(h, buf, len);
+			return crc_32w_buf_table(h, buf, len, reset);
 		default:
 			///@todo error !!
 			return -1;

@@ -61,12 +61,13 @@ bool cm_t_compare(const cm_t *a, const cm_t *b)
 }
 
 
-uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len)
+uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len, bool reset)
 {
 	uint32_t r; 
 
 	// reset
-	CRC_ResetDR();
+	if (reset)
+		CRC_ResetDR();
 
 	// mangle length so it is 4 byte aligned as hard requires this
 	if (len & 0x03)
@@ -84,20 +85,21 @@ uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len)
 
 bool crc_init_hard(struct crc_h *h)
 {
-	bool result = false;
-
 	// if the cm config matches the hardware we are good to go !!
-	result = cm_t_compare(&h->cm, &stm32f10x_crc_h.cm);
+	if (!cm_t_compare(&h->cm, &stm32f10x_crc_h.cm))
+		return false;
 
 	// start crc hw clock if needed
-	if (result && !clk_running)
+	if (!clk_running)
 		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_CRC, ENABLE);
 	clk_running = true;
 
-	// mark as hard
-	if (result)
-		h->method = CRC_METHOD_HARD;
+	// do initial reset
+	CRC_ResetDR();
 
-	return result;
+	// mark as hard
+	h->method = CRC_METHOD_HARD;
+
+	return true;
 }
 

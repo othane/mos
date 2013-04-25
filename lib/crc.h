@@ -44,7 +44,7 @@ struct crc_h
 bool crc_init(struct crc_h *h);
 
 
-uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len);
+uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len, bool reset);
 
 
 #endif

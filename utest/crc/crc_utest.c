@@ -58,7 +58,7 @@ uint32_t run_crc(void)
 		len = (len & 0xFFFFFFFC);
 
 	crc_init(&h);
-	crc = crc_buf(&h, msg, len);
+	crc = crc_buf(&h, msg, len, true);
 	
 	return crc;
 }

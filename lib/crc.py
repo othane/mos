@@ -56,8 +56,8 @@ def crc_init(h):
 	return libcrc.crc_init(ctypes.byref(h))
 
 # uint32_t crc_buf(struct crc_h *h, const void *buf, uint32_t len); 
-def crc_buf(h, buf, len):
-	return libcrc.crc_buf(ctypes.byref(h), buf, len)
+def crc_buf(h, buf, len, reset=True):
+	return libcrc.crc_buf(ctypes.byref(h), buf, len, reset)
 
 # unit test
 if __name__ == "__main__":
