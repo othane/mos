@@ -64,9 +64,14 @@ if __name__ == "__main__":
 	h = stm32f10x_crc_h
 	crc_init(h)
 
-	buf = "Hello world this is a message to crc\x00\x00\x00\x00"
-	l = int(math.ceil(len(buf) / 4.0) * 4)
-	crc = crc_buf(h, buf, l)
+	msg = "Hello world this is a message to crc\x00\x00\x00\x00"
+	msg_crc = 0xb3c8cbe8;
+	l = int(math.ceil(len(msg) / 4.0) * 4)
+	crc = crc_buf(h, msg, l) & 0xffffffff
 
 	print "crc = " + hex(crc & 0xffffffff)
+	if crc == msg_crc:
+		print "unit test passed"
+	else:
+		print "unit test failed"
 

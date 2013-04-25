@@ -99,7 +99,9 @@ int main(void)
 	printf("crc_best= 0x%.4X [%c]\n", crc_best, res);
 	printf("[crc_best method: %d]\n", h.method);
 	res = 'f';
-	if (crc_soft == crc_tab == crc_best == known_msg_crc)
+	if (known_msg_crc == crc_soft && 
+		known_msg_crc == crc_tab  && 
+		known_msg_crc == crc_best)
 		res = 'p';
 	printf("\ntest result %c\n\n", res);
 	#endif
