@@ -315,7 +315,7 @@ void SPI3_IRQHandler(void)
 void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, void *param)
 {
 	///@todo more sanity checks
-	if (buf == NULL || len < 1)
+	if (len < 1)
 		///@todo invalid input parameters
 		goto error;
 	sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup read
@@ -350,7 +350,7 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	tx_byte.w = 0xAACC;
 
 	///@todo more sanity checks
-	if (buf == NULL || len < 1)
+	if (len < 1)
 		///@todo invalid input parameters
 		goto error;
 	sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup read
