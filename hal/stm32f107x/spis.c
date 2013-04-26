@@ -122,6 +122,14 @@ void spis_init(spis_t *spis)
 	spis_clear_read(spis);
 	spis_clear_write(spis);
 
+	// init the spis gpio lines
+	// we seem to need to init a [so I choose these since they need to be inited anyway] gpio 
+	// before the spi_clk or else irqs dont seem to work and possibly the whole spis doesnt
+	gpio_init_pin(spis->nss);
+	gpio_init_pin(spis->sck);
+	gpio_init_pin(spis->miso);
+	gpio_init_pin(spis->mosi);
+
 	// init the spis clk
 	switch ((uint32_t)spis->channel)
 	{
@@ -141,12 +149,6 @@ void spis_init(spis_t *spis)
 			return;
 	}
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
-
-	// init the spis gpio lines
-	gpio_init_pin(spis->nss); ///@todo hook nss line to both edge interrupt so we can call the transaction start/stop events
-	gpio_init_pin(spis->sck);
-	gpio_init_pin(spis->miso);
-	gpio_init_pin(spis->mosi);
 
 	// setup the select / deselect callbacks
 	///@todo we might not want to do this for all spis devs, perhaps there should be a flag in the spis_t
