@@ -14,6 +14,7 @@
 
 
 #define PROGRAM_HEADERS 2
+const uint32_t bootstrap_program_header_count at_symbol(".bootstrap_program_header_count") = PROGRAM_HEADERS;
 const bootstrap_prog_header *bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = {0,};
 
 
