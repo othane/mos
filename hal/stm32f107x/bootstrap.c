@@ -14,6 +14,29 @@
 #include "hal.h"
 
 
+// these pointers are defined by the linker
+extern const uint32_t _bootstrap_program_header_count;
+extern const bootstrap_prog_header *_bootstrap_program_headers[];
+
+
+struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid)
+{
+	int k; 
+
+	// go through the list looking for this pid (return pointer to header if
+	// found else NULL
+	for (k = 0; k < _bootstrap_program_header_count; k++)
+	{
+		if (_bootstrap_program_headers[k] == NULL)
+			continue;
+
+		if (pid == _bootstrap_program_headers[k]->pid)
+			return _bootstrap_program_headers[k];
+	}
+	return NULL;
+}
+
+
 void bootstrap_set_boot_pid(uint16_t pid)
 {
 	PWR_BackupAccessCmd(ENABLE);

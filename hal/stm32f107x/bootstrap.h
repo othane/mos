@@ -32,8 +32,12 @@ packed_end
 typedef struct bootstrap_prog_header bootstrap_prog_header;
 
 
-// use these to select applications to boot
-extern const bootstrap_prog_header *bootstrap_program_headers[];
+/**
+ * @brief given a pid try to find the corresponding header
+ * @param pid to lookup
+ * @return pointer to the header for this program
+ */
+struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid);
 
 
 /**
