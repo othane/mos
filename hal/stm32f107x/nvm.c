@@ -14,8 +14,7 @@
 #include <string.h> // for memcpy (do this manually to remove dep)
 
 
-///@todo support multi page erase
-bool nvm_erase(void *addr, uint32_t len)
+static bool _nvm_erase(void *addr, uint32_t len)
 {
 	FLASH_Unlock();
 
@@ -32,6 +31,30 @@ bool nvm_erase(void *addr, uint32_t len)
 			///@todo error message
 			return false;
 	}
+}
+
+
+#define PAGE_SIZE 0x00000800UL		/* 2K Page Size */
+uint32_t nvm_erase(void *addr, uint32_t len)
+{
+	uint32_t b = 0;
+	uint32_t _addr = addr;
+
+	// align to the start of a page
+	_addr = _addr - (_addr % PAGE_SIZE);
+
+	// erase pages as needed
+	while (b < len)
+	{
+		///@todo if we had enough RAM spare we could
+		///back up the whole page and just erase len
+		///bytes and restore the rest
+		if (!_nvm_erase(_addr, PAGE_SIZE))
+			return b;
+		b += PAGE_SIZE;
+	}
+
+	return b;
 }
 
 

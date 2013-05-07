@@ -17,8 +17,9 @@
  * @brief erase pages from addr to len
  * @param addr points to anywhere in the first page to erase
  * @param len number of bytes to erase, if we cross into a new page erase that also
+ * @return number of bytes actually erase (may be much more as we can probably only erase massive pages)
  */
-bool nvm_erase(void *addr, uint32_t len);
+uint32_t nvm_erase(void *addr, uint32_t len);
 
 
 /**
