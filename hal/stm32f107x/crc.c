@@ -65,6 +65,9 @@ uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len, bool reset
 {
 	uint32_t r; 
 
+	// crc hw is a shared resource so we need to lock around it
+	sys_enter_critical_section();
+
 	// reset
 	if (reset)
 		CRC_ResetDR();
@@ -79,6 +82,7 @@ uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len, bool reset
 	r = CRC_CalcBlockCRC((uint32_t *)buf, len);
 
 	// return result
+	sys_leave_critical_section();
 	return r;
 }
 
@@ -89,6 +93,9 @@ bool crc_init_hard(struct crc_h *h)
 	if (!cm_t_compare(&h->cm, &stm32f10x_crc_h.cm))
 		return false;
 
+	// crc hw is a shared resource so we need to lock around it
+	sys_enter_critical_section();
+
 	// start crc hw clock if needed
 	if (!clk_running)
 		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_CRC, ENABLE);
@@ -96,6 +103,7 @@ bool crc_init_hard(struct crc_h *h)
 
 	// do initial reset
 	CRC_ResetDR();
+	sys_leave_critical_section();
 
 	// mark as hard
 	h->method = CRC_METHOD_HARD;
