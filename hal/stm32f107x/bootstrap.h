@@ -24,6 +24,8 @@ packed(struct) bootstrap_prog_header
 	uint8_t  type;        /**< header type, prog_header in this case (this is just a unique code to ensure this header is intended to describe a prog as other headers may exist) */
 	void	 *isr_vector; /**< points to the start of the programs isr_vector table */
 	uint8_t  pid;	      /**< program id number (1...65536, pid=0 is the bootstrap) */
+	uint32_t max_len;	  /**< maximum size reserved for this app */
+	uint32_t key;		  /**< key value needed by the bootloader to unlock this program and update it */
 };
 packed_end
 
