@@ -41,7 +41,6 @@ static void spis_clear_write(spis_t *spis)
 	spis->write_count = 0;
 	spis->write_complete_cb = NULL;
 	spis->write_complete_param = NULL;
-	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_TXE, DISABLE);
 }
 
 
