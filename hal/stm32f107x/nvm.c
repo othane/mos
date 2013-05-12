@@ -51,6 +51,7 @@ uint32_t nvm_erase(void *addr, uint32_t len)
 		///bytes and restore the rest
 		if (!_nvm_erase(_addr, PAGE_SIZE))
 			return b;
+		_addr += PAGE_SIZE;
 		b += PAGE_SIZE;
 	}
 
