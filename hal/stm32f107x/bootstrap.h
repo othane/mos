@@ -39,7 +39,7 @@ typedef struct bootstrap_prog_header bootstrap_prog_header;
  * @param pid to lookup
  * @return pointer to the header for this program
  */
-struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid);
+const struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid);
 
 
 /**

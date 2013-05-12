@@ -14,11 +14,11 @@
 #include <string.h> // for memcpy (do this manually to remove dep)
 
 
-static bool _nvm_erase(void *addr, uint32_t len)
+static bool _nvm_erase(uint32_t addr, uint32_t len)
 {
 	FLASH_Unlock();
 
-	switch (FLASH_ErasePage((uint32_t)addr))
+	switch (FLASH_ErasePage(addr))
 	{
 		case FLASH_COMPLETE:
 			return true;
@@ -38,7 +38,7 @@ static bool _nvm_erase(void *addr, uint32_t len)
 uint32_t nvm_erase(void *addr, uint32_t len)
 {
 	uint32_t b = 0;
-	uint32_t _addr = addr;
+	uint32_t _addr = (uint32_t)addr;
 
 	// align to the start of a page
 	_addr = _addr - (_addr % PAGE_SIZE);

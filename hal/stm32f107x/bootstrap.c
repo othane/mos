@@ -19,7 +19,7 @@ extern const uint32_t _bootstrap_program_header_count;
 extern const bootstrap_prog_header *_bootstrap_program_headers[];
 
 
-struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid)
+const struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid)
 {
 	int k; 
 

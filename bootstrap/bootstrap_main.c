@@ -22,7 +22,6 @@ int main(void)
 {
 	uint16_t prog = 0;
 	uint16_t boot_pid;
-	bootstrap_prog_header *boot_prog_header;
 
 	// basic start up
 	sys_init();
