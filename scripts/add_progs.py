@@ -38,8 +38,8 @@ prog.start_addr = build.start_addr # we need this to make the merge work smoothl
 build.merge(prog)
 
 # add pointer to program header to the bootstrap
-header_tbl_addr = 0x08000200
-header_tbl_len = 2
+header_tbl_addr = 0x08000204
+header_tbl_len = 2 #@todo get this from 0x0800200 as uint32_t
 header_tbl_format = "<LL"
 header_tbl = list(struct.unpack(header_tbl_format, build.gets(header_tbl_addr, header_tbl_len * 4)))
 k = 0
