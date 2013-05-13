@@ -73,7 +73,7 @@ bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 	uint32_t crc;
 
 	// null header is invalid
-	if (header == NULL)
+	if (header == NULL || header == 0xffffffff)
 		return false;
 
 	// check len

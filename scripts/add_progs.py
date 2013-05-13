@@ -43,7 +43,7 @@ header_tbl_len = 2 #@todo get this from 0x0800200 as uint32_t
 header_tbl_format = "<LL"
 header_tbl = list(struct.unpack(header_tbl_format, build.gets(header_tbl_addr, header_tbl_len * 4)))
 k = 0
-while header_tbl[k] != 0:
+while header_tbl[k] != 0xffffffff:
 	if k > header_tbl_len:
 		sys.exit("bootstrap program table full [you have too many programs]!");
 	k += 1
