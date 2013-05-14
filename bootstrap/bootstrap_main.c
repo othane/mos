@@ -15,7 +15,8 @@
 
 #define PROGRAM_HEADERS 2
 const uint32_t bootstrap_program_header_count at_symbol(".bootstrap_program_header_count") = PROGRAM_HEADERS;
-const bootstrap_prog_header *bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = {0xffffffff, 0xffffffff};
+const bootstrap_prog_header *bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = 
+{(void *)0xffffffff, (void *)0xffffffff};
 
 
 int main(void)
@@ -30,6 +31,7 @@ int main(void)
 	boot_pid = bootstrap_get_boot_pid();
 	if ((boot_pid <= 0) || (boot_pid > PROGRAM_HEADERS))
 		goto default_boot;
+	goto requested_boot; // just quit warnings
 
 requested_boot:
 	// search the program list for requested boot_pid (if the pid
@@ -50,6 +52,7 @@ default_boot:
 		if (bootstrap_validate_prog(bootstrap_program_headers[prog]))
 			boot(bootstrap_program_headers[prog]);
 	}
+	goto bricked_boot; // just quit warnings
 
 bricked_boot:
 	// no valid programs to boot (we are useless like this)
