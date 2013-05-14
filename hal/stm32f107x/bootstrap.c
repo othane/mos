@@ -16,7 +16,7 @@
 
 // these pointers are defined by the linker
 extern const uint32_t _bootstrap_program_header_count;
-extern const bootstrap_prog_header *_bootstrap_program_headers[];
+extern const bootstrap_prog_header * const _bootstrap_program_headers[];
 
 
 const struct bootstrap_prog_header * bootstrap_get_program_header(uint8_t pid)
