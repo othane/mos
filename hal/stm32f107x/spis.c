@@ -30,6 +30,10 @@ static void spis_clear_read(spis_t *spis)
 void spis_cancel_read(spis_t *spis)
 {
 	spis_clear_read(spis);
+
+	// clear the Rx buffer so the next read will start fresh
+	while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_RXNE) == SET)
+		SPI_I2S_ReceiveData(spis->channel);
 }
 
 
@@ -176,6 +180,7 @@ void spis_init(spis_t *spis)
 
 	// enable the spis isrs
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_RXNE, ENABLE);
+	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_TXE, ENABLE);
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
 
 	// start spis device
@@ -183,8 +188,114 @@ void spis_init(spis_t *spis)
 }
 
 
+// read the bytes from the rx buf move the buffers on and possibly call the completion event
+static spis_read_complete spis_read_phase(spis_t *spis, void **buf, uint16_t *len, void **param)
+{
+	union
+	{
+		uint8_t b[2];
+		uint16_t w;
+	} rx_byte;
+	rx_byte.w = SPI_I2S_ReceiveData(spis->channel);
+
+	// Rx buffer has data, do we have anywhere and enough space to store it
+	if ((spis->read_buf != NULL) && (spis->read_count < spis->read_buf_len) && (spis->read_buf_len > 0))
+	{
+		// buffer the first Rx byte
+		spis->read_buf[spis->read_count] = rx_byte.b[1];
+
+		// if the buffer is long enough get the second byte
+		if (spis->read_count+1 < spis->read_buf_len)
+			spis->read_buf[spis->read_count + 1] = rx_byte.b[0];
+	}
+
+	// increment the number of bytes read, do it twice as we possibly read 2 bytes
+	if (spis->read_count < spis->read_buf_len)
+		spis->read_count++;
+	if (spis->read_count < spis->read_buf_len)
+		spis->read_count++;
+	
+	// if we have read all the bytes so clean up read and run the read complete callback
+	if ((spis->read_count == spis->read_buf_len) && (spis->read_buf_len > 0))
+	{
+		spis_read_complete read_cb = spis->read_complete_cb;
+		*buf = spis->read_buf;
+		*len = spis->read_count;
+		*param = spis->read_complete_param;
+		spis_clear_read(spis);
+		return read_cb;
+
+		spis_read_complete cb = spis->read_complete_cb;
+		void *buf = spis->read_buf;
+		uint16_t len = spis->read_count;
+		void *param = spis->read_complete_param;
+		spis_clear_read(spis);
+		return cb;
+		if (cb != NULL)
+			cb(spis, (void *)buf, len, (void *)param);
+	}
+	return NULL;
+}
+
+// write the bytes to the tx buf move the buffers on and possibly call the completion event
+static spis_write_complete spis_write_phase(spis_t *spis, void **buf, uint16_t *len, void **param)
+{
+	volatile union
+	{
+		uint8_t b[2];
+		uint16_t w;
+	} tx_byte;
+	tx_byte.w = 0xAACC; // transmit a fixed pattern if we have nothing to send
+
+	// do we have anything to transmit
+	if ((spis->write_buf != NULL) && (spis->write_count < spis->write_buf_len) && (spis->write_buf_len > 0))
+	{
+		tx_byte.b[1] = spis->write_buf[spis->write_count];
+
+		// if we have enough bytes to send the get the next byte too
+		if ((spis->write_count+1) < spis->write_buf_len)
+			tx_byte.b[0] = spis->write_buf[spis->write_count + 1];
+	}
+
+	// send the data
+	SPI_I2S_SendData(spis->channel, tx_byte.w);
+
+	// increment the number of bytes written, do it twice as we possibly write 2 bytes
+	if (spis->write_count < spis->write_buf_len)
+		spis->write_count++;
+	if (spis->write_count < spis->write_buf_len)
+		spis->write_count++;
+	
+	// if we have written all the bytes in the buffer then run the clean up
+	if ((spis->write_count == spis->write_buf_len) && (spis->write_buf_len > 0))
+	{
+		spis_write_complete write_cb = spis->write_complete_cb;
+		*buf = spis->write_buf;
+		*len = spis->write_count;
+		*param = spis->write_complete_param;
+		spis_clear_write(spis);
+		return write_cb;
+
+		spis_write_complete cb = spis->write_complete_cb;
+		void *buf = spis->write_buf;
+		uint16_t len = spis->write_count;
+		void *param = spis->write_complete_param;
+		spis_clear_write(spis);
+		if (cb != NULL)
+			cb(spis, (void *)buf, len, (void *)param);
+	}
+	return NULL;
+}
+
+
 static void spis_irq_handler(spis_t *spis)
 {
+	spis_read_complete read_cb = NULL;
+	spis_write_complete write_cb = NULL;
+	void *read_cb_buf, *write_cb_buf;
+	uint16_t read_cb_len, write_cb_len;
+	void *read_cb_param, *write_cb_param;
+
 	// sanity check that spis should run
 	if (spis == NULL)
 		// this spis is not setup
@@ -205,87 +316,18 @@ static void spis_irq_handler(spis_t *spis)
 
 	// read phase (read the Rx register)
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_RXNE) == SET)
-	{
-		union
-		{
-			uint8_t b[2];
-			uint16_t w;
-		} rx_byte;
-		rx_byte.w = SPI_I2S_ReceiveData(spis->channel);
-
-		// Rx buffer has data, do we have anywhere and enough space to store it
-		if ((spis->read_buf != NULL) && (spis->read_count < spis->read_buf_len) && (spis->read_buf_len > 0))
-		{
-			// buffer the first Rx byte
-			spis->read_buf[spis->read_count] = rx_byte.b[1];
-
-			// if the buffer is long enough get the second byte
-			if (spis->read_count+1 < spis->read_buf_len)
-				spis->read_buf[spis->read_count + 1] = rx_byte.b[0];
-		}
-
-		// increment the number of bytes read, do it twice as we possibly read 2 bytes
-		if (spis->read_count < spis->read_buf_len)
-			spis->read_count++;
-		if (spis->read_count < spis->read_buf_len)
-			spis->read_count++;
-
-		if ((spis->read_count == spis->read_buf_len) && (spis->read_buf_len > 0))
-		{
-			// we have read all the bytes so clean up read and run the read complete callback
-			spis_read_complete cb = spis->read_complete_cb;
-			void *buf = spis->read_buf;
-			uint16_t len = spis->read_count;
-			void *param = spis->read_complete_param;
-			spis_clear_read(spis);
-			if (cb != NULL)
-				cb(spis, (void *)buf, len, (void *)param);
-		}
-	}
+		read_cb = spis_read_phase(spis, &read_cb_buf, &read_cb_len, &read_cb_param);
 
 	// write phase (reload the Tx register if it is empty and the isr is enabled)
 	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE) == SET)
-	{
-		volatile union
-		{
-			uint8_t b[2];
-			uint16_t w;
-		} tx_byte;
-		tx_byte.w = 0xAACC; // transmit a fixed pattern if we have nothing to send
+		write_cb = spis_write_phase(spis, &write_cb_buf, &write_cb_len, &write_cb_param);
 
-		// do we have anything to transmit
-		if ((spis->write_buf != NULL) && (spis->write_count < spis->write_buf_len) && (spis->write_buf_len > 0))
-		{
-			tx_byte.b[1] = spis->write_buf[spis->write_count];
-
-			// if we have enough bytes to send the get the next byte too
-			if ((spis->write_count+1) < spis->write_buf_len)
-				tx_byte.b[0] = spis->write_buf[spis->write_count + 1];
-		}
-
-		// send the data
-		SPI_I2S_SendData(spis->channel, tx_byte.w);
-
-		// increment the number of bytes written, do it twice as we possibly write 2 bytes
-		if (spis->write_count < spis->write_buf_len)
-			spis->write_count++;
-		if (spis->write_count < spis->write_buf_len)
-			spis->write_count++;
-
-		if ((spis->write_count == spis->write_buf_len) && (spis->write_buf_len > 0))
-		{
-			// if we have written all the bytes in the buffer then run the clean up
-			// write and call write complete callback.
-			spis_write_complete cb = spis->write_complete_cb;
-			void *buf = spis->write_buf;
-			uint16_t len = spis->write_count;
-			void *param = spis->write_complete_param;
-			spis_clear_write(spis);
-			if (cb != NULL)
-				cb(spis, (void *)buf, len, (void *)param);
-		}
-	}
-
+	// run deferred completion events, defer these so that we read new data out
+	// and write new data in to the spi registers as quickly as possible
+	if (read_cb != NULL)
+		read_cb(spis, (void *)read_cb_buf, read_cb_len, (void *)read_cb_param);
+	if (write_cb != NULL)
+		write_cb(spis, (void *)write_cb_buf, write_cb_len, (void *)write_cb_param);
 }
 
 
@@ -307,12 +349,16 @@ void SPI2_IRQHandler(void)
 void SPI3_IRQHandler(void)
 {
 	spis_irq_handler(spis_irq_list[2]);
-
 }
 
 
 void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, void *param)
 {
+	spis_read_complete read_cb = NULL;
+	void *read_cb_buf;
+	uint16_t read_cb_len;
+	void *read_cb_param;
+
 	///@todo more sanity checks
 	if (len < 1)
 		///@todo invalid input parameters
@@ -322,16 +368,20 @@ void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, voi
 		///@todo read in progress already
 		goto error;
 
-	// clear the Rx buffer so the read start fresh
-	while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_RXNE) == SET)
-		SPI_I2S_ReceiveData(spis->channel);
-
 	// load the read info once we leave the critical section the isr will populate the read buffer for us
 	spis->read_buf = buf;
 	spis->read_buf_len = len;
 	spis->read_count = 0;
 	spis->read_complete_cb = cb;
 	spis->read_complete_param = param;
+
+	// read any already pending data (note call spis_cancel_read first to start fresh)
+	if (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_RXNE) == SET)
+	{
+		read_cb = spis_read_phase(spis, &read_cb_buf, &read_cb_len, &read_cb_param);
+		if (read_cb != NULL)
+			read_cb(spis, (void *)read_cb_buf, read_cb_len, (void *)read_cb_param);
+	}
 
 error:
 	sys_leave_critical_section();
@@ -341,18 +391,18 @@ error:
 
 void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, void *param)
 {
-	volatile union
-	{
-		uint8_t b[2];
-		uint16_t w;
-	} tx_byte;
-	tx_byte.w = 0xAACC;
+	spis_write_complete write_cb = NULL;
+	void *write_cb_buf;
+	uint16_t write_cb_len;
+	void *write_cb_param;
 
 	///@todo more sanity checks
 	if (len < 1)
 		///@todo invalid input parameters
 		goto error;
+
 	sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup read
+
 	if (spis->write_buf != NULL || spis->write_count != 0)
 		///@todo write in progress already
 		goto error;
@@ -365,25 +415,11 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	spis->write_complete_param = param;
 
 	// kick off the write by sending the first word the isr will handle sending the remaining bytes
-	if ((spis->write_buf != NULL) && (spis->write_buf_len > 0))
-	{
-		// send first byte
-		tx_byte.b[1] = spis->write_buf[0];
-		// send second byte if we have it
-		if (spis->write_buf_len > 1)
-			tx_byte.b[0] = spis->write_buf[1];
-	}
-	SPI_I2S_SendData(spis->channel, tx_byte.w); // send first word
-
-	// increment the number of bytes written, do it twice as we possibly write 2 bytes
-	if (spis->write_count < spis->write_buf_len)
-		spis->write_count++;
-	if (spis->write_count < spis->write_buf_len)
-		spis->write_count++;
-
-	// enable the send to complete via isr
+	write_cb = spis_write_phase(spis, &write_cb_buf, &write_cb_len, &write_cb_param);
+	if (write_cb != NULL)
+		write_cb(spis, (void *)write_cb_buf, write_cb_len, (void *)write_cb_param);
+	
 	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_TXE, ENABLE);
-
 error:
 	sys_leave_critical_section();
 	return;
