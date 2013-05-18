@@ -29,6 +29,7 @@ int main(void)
 
 	// see if we were asked to boot a specific program
 	boot_pid = bootstrap_get_boot_pid();
+	bootstrap_set_boot_pid(0); // revert bootpid to default so we start up normally next time
 	if ((boot_pid <= 0) || (boot_pid > PROGRAM_HEADERS))
 		goto default_boot;
 	goto requested_boot; // just quit warnings
