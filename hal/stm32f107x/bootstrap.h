@@ -16,6 +16,7 @@
 // describes a program the bootstrap can run
 ///@todo this should be stm32f107 specific
 #define BOOTSTRAP_PROG_HEADER 0x01
+#define BOOTSTRAP_PROG_HEADER_STM32F107_HW_ID 1
 packed_start
 packed(struct) bootstrap_prog_header
 {
@@ -26,6 +27,7 @@ packed(struct) bootstrap_prog_header
 	uint8_t  pid;	      /**< program id number (1...65536, pid=0 is the bootstrap) */
 	uint32_t max_len;	  /**< maximum size reserved for this app */
 	uint32_t key;		  /**< key value needed by the bootloader to unlock this program and update it */
+	uint16_t hw_id;       /**< hardware id, this is a code to indicate what hardware this program can run on */
 };
 packed_end
 
