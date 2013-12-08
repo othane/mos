@@ -31,7 +31,7 @@ void init(void)
 	sys_init();
 
 	gpio_init_pin(&gpio_mco);
-	gpio_init_pin(&gpio_pa10);
+	gpio_init_pin(&gpio_led);
 	gpio_init_pin(&gpio_pa15);
 
 	gpio_set_falling_edge_event(&gpio_pa15, falling_edge, NULL);
@@ -39,27 +39,29 @@ void init(void)
 }
 
 
-void main(void)
+int main(void)
 {
 	volatile bool pa15_state;
 
 	init();
 
 	// set the pin high, check it is high
-	gpio_set_pin(&gpio_pa10, 1);
-	while (gpio_get_pin(&gpio_pa10) == 0)
+	gpio_set_pin(&gpio_led, 1);
+	while (gpio_get_pin(&gpio_led) == 0)
 	{}
 
 	// set the pin low, check it is low
-	gpio_set_pin(&gpio_pa10, 0);
-	while (gpio_get_pin(&gpio_pa10) == 1)
+	gpio_set_pin(&gpio_led, 0);
+	while (gpio_get_pin(&gpio_led) == 1)
 	{}
 
 	// toggle the pin ad fast as possible
 	while (1)
 	{
-		gpio_toggle_pin(&gpio_pa10);
+		gpio_toggle_pin(&gpio_led);
 		pa15_state = gpio_get_pin(&gpio_pa15);
 	}
+
+	return 0;
 }
 

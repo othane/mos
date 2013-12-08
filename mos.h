@@ -12,7 +12,7 @@
 #ifndef __MOS__
 #define __MOS__
 
-#include "hal/stm32f107x/hal.h"
+#include "hal/hal.h"
 
 #endif
 

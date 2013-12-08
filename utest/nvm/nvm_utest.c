@@ -13,13 +13,12 @@
  *
  */
 
-
-///@todo use compiler.h to locate the msg var
-const char msg[32] @ "MSG" = "hello";
-char msg_ram[32] = {0,};
-
 #include <hal.h>
 #include <string.h>
+
+const char msg[32] at_symbol(".free_page") = "hello";
+char msg_ram[32] = {0,};
+
 
 void init(void)
 {
@@ -27,7 +26,7 @@ void init(void)
 }
 
 
-void main(void)
+int main(void)
 {
 	init();
 
@@ -44,5 +43,7 @@ void main(void)
 	while (1)
 	{
 	}
+
+	return 0;
 }
 

@@ -26,7 +26,7 @@ static struct SYS_T sys = {0,};
 
 
 // setup all the system clocks
-#define SYS_CLK 72000000
+#define SYS_CLK 62500000
 static void sys_clk_init(void)
 {
 	ErrorStatus HSEStartUpStatus;
@@ -59,7 +59,7 @@ static void sys_clk_init(void)
 	// APB1 (low speed) prescaler set to div 2, APB1 = HCLK / 2
 	RCC_PCLK1Config(RCC_HCLK_Div2);
 
-	// Setup the PLLCLK source and pre scaler (25MHz * 5 / 2 = 62MHz)
+	// Setup the PLLCLK source and pre scaler (25MHz * 5 / 2 = 62.5MHz)
 	///@note if you change this update the SYS_CLK definition
 	RCC_PREDIV1Config(RCC_PREDIV1_Source_HSE, RCC_PREDIV1_Div2);
 	RCC_PLLConfig(RCC_PLLSource_PREDIV1, RCC_PLLMul_5);

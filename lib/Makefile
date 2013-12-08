@@ -22,13 +22,13 @@ $(CRCLIBNAME).o: $(OBJS)
 	$(LD) -r $(OBJS) -o $@
 
 %.o : %.c
-	$(CC) -c $(CPFLAGS) -Wa,-ahlms=$(<:.c=.lst) -I . $(INCDIR) $< -o $@
+	$(CC) -c $(CPFLAGS) -Wa,-ahlms=$(<:.c=.lst) -I. $(patsubst %,-I%,$(INCDIR)) $< -o $@
 
 $(CRCLIBNAME).so: crc.c crcmodel.c
 	# shared lib for host side crc generation (note compile all of it in one go
 	# ie from all c lib so we can cross compile libcrc.o and host compile libcrc.so
 	# in one build process easily
-	$(CC) -shared -fpic -o$(CRCLIBNAME).so crc.c crcmodel.c
+	$(CC) -shared -fpic $(CPFLAGS) -o$(CRCLIBNAME).so crc.c crcmodel.c
 
 clean:
 	-rm -f $(OBJS)
