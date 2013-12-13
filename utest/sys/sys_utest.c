@@ -29,7 +29,7 @@ void init()
 
 	// this utest requires very basic gpio module also
 	gpio_init_pin(&gpio_mco);
-	gpio_init_pin(&gpio_pa10);
+	gpio_init_pin(&gpio_systick);
 }
 
 
@@ -43,8 +43,8 @@ int main(void)
 		tick = sys_get_tick();
 		if (tick != last_tick)
 		{
-			// toggle gpio_pa10 to dbg sys tick timing issues
-			gpio_toggle_pin(&gpio_pa10);
+			// toggle gpio_systick to dbg sys tick timing issues
+			gpio_toggle_pin(&gpio_systick);
 		}
 		last_tick = tick;
 	}

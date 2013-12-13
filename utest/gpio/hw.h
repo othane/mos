@@ -18,10 +18,11 @@
 /**
  * list of gpio pins available on this hw
  */
-extern gpio_pin_t gpio_mco;
-extern gpio_pin_t gpio_pa10;
-extern gpio_pin_t gpio_pa15;
-extern gpio_pin_t gpio_led;
+extern gpio_pin_t gpio_in;
+extern gpio_pin_t gpio_led0;
+extern gpio_pin_t gpio_led1;
+extern gpio_pin_t gpio_led2;
+extern gpio_pin_t gpio_led3;
 
 #endif
 

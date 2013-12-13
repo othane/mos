@@ -15,14 +15,20 @@
 #include <hal.h>
 
 
+gpio_pin_t *led_list[] = {&gpio_led0, &gpio_led1, &gpio_led2, &gpio_led3};
+volatile int l = 0;
+
+
 void falling_edge(gpio_pin_t *pin, void *param)
 {
-	sys_nop();
+	if (++l > 3)
+		l = 0;
 }
 
 void rising_edge(gpio_pin_t *pin, void *param)
 {
-	sys_nop();
+	if (++l > 3)
+		l = 0;
 }
 
 
@@ -30,36 +36,50 @@ void init(void)
 {
 	sys_init();
 
-	gpio_init_pin(&gpio_mco);
-	gpio_init_pin(&gpio_led);
-	gpio_init_pin(&gpio_pa15);
+	gpio_init_pin(&gpio_led0);
+	gpio_init_pin(&gpio_led1);
+	gpio_init_pin(&gpio_led2);
+	gpio_init_pin(&gpio_led3);
+	gpio_init_pin(&gpio_in);
 
-	gpio_set_falling_edge_event(&gpio_pa15, falling_edge, NULL);
-	gpio_set_rising_edge_event(&gpio_pa15, rising_edge, NULL);
+	gpio_set_falling_edge_event(&gpio_in, falling_edge, NULL);
+	gpio_set_rising_edge_event(&gpio_in, rising_edge, NULL);
 }
-
 
 int main(void)
 {
-	volatile bool pa15_state;
+	volatile bool pa_in_state;
+	int k;
 
 	init();
 
-	// set the pin high, check it is high
-	gpio_set_pin(&gpio_led, 1);
-	while (gpio_get_pin(&gpio_led) == 0)
-	{}
+	// set all the led pins hi (turns leds off on dev kits)
+	for (k = 0; k < sizeof(led_list) / sizeof(gpio_pin_t *); k++)
+	{
+		gpio_set_pin(led_list[k], 1);
+		while (gpio_get_pin(led_list[k]) == 0)
+		{}
+	}
 
-	// set the pin low, check it is low
-	gpio_set_pin(&gpio_led, 0);
-	while (gpio_get_pin(&gpio_led) == 1)
-	{}
-
-	// toggle the pin ad fast as possible
+	// toggle the led list as fast as possible (change led on button press)
 	while (1)
 	{
-		gpio_toggle_pin(&gpio_led);
-		pa15_state = gpio_get_pin(&gpio_pa15);
+		for (k = 0; k < sizeof(led_list) / sizeof(gpio_pin_t *); k++)
+		{
+			if (k == l)
+			{
+				gpio_set_pin(led_list[k], 0);
+				while (gpio_get_pin(led_list[k]) == 1)
+				{}
+			}
+			else
+			{
+				gpio_set_pin(led_list[k], 1);
+				while (gpio_get_pin(led_list[k]) == 0)
+				{}
+			}
+		}
+		pa_in_state = gpio_get_pin(&gpio_in);
 	}
 
 	return 0;

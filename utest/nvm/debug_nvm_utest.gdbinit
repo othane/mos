@@ -1,7 +1,7 @@
 target remote localhost:3333
 file nvm_utest.elf
 mon reset halt
-tbreak main
+break main
 c
 
 define reset

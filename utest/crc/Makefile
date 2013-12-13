@@ -14,14 +14,10 @@ include ../../hal/hal.mk
 endif
 
 SRC = crc_utest.c 
-ifdef EMBEDDED
-SRC += hw.c
-endif
-
 OBJS = $(SRC:.c=.o)
 
 ifdef EMBEDDED
-CPFLAGS += -DEMBEDDED
+CPFLAGS += -DEMBEDDED -DNOHW_H
 else
 export CPFLAGS += -DPRINT_RESULT -g
 endif
