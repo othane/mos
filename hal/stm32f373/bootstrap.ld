@@ -1,13 +1,72 @@
+/*
+Default linker script for STM32F10x_512K_64K
+Copyright RAISONANCE S.A.S. 2008
+
+Modified for High Density devices
+by Francois Gervais, August 2009
+Modified for C++ support with the help of generic.ld
+from CodeSourcery G++ Lite
+by Francois Gervais, Septembre 2009
+Modified for MOS support
+by Oliver Thane, 2013
+*/
+
+/*	
+ * MEMORY MAP
+ * +================================================================+
+ * | start		| len		| contents								|
+ * |----------------------------------------------------------------|
+ * | 			| 			|										|
+ * | 0x08000000 | 8K		|	bootstrap							|
+ * |     0x0000	| 	0x0200	|	 * isr vector table					|
+ * |     0x0200	| 	0x0004	|	 * bootstrap_program_header_count   |
+ * |     0x0204	| 	0x0008	|	 * bootstrap_program_headers[2]     |
+ * |     0x020C	| 	0x15F8	|	 * bootstrap code					|
+ * |			|			|	(hopefully can be smaller wo libc)	|
+ * | 			| 			|										|
+ * +================================================================+
+ */
+
+/* include the common STM32F10x sub-script */
+
+/* Common part of the linker scripts for STM32 devices*/
+
+
+/* default stack sizes. 
+
+These are used by the startup in order to allocate stacks for the different modes.
+*/
+
+__Stack_Size = 0x3000 ;
+
+PROVIDE ( _Stack_Size = __Stack_Size ) ;
+
+__Stack_Init = _estack  - __Stack_Size ;
+
+/*"PROVIDE" allows to easily override these values from an object file or the commmand line.*/
+PROVIDE ( _Stack_Init = __Stack_Init ) ;
+
+/*
+There will be a link error if there is not this amount of RAM free at the end.
+*/
+_Minimum_Stack_Size = __Stack_Size ;
+
+
+/* include the memory spaces definitions sub-script */
+/*
+Linker subscript for STM32F10x definitions with 512K Flash and 64K RAM */
+
+/* Memory Spaces Definitions */
+
 MEMORY
 {
-  RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
-  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 256K - 2K
-  FREE_PAGE(xrx) : ORIGIN = 0x0803F800, LENGTH = 2K
+  ISR_VECT_RAM  : ORIGIN = 0x20000000, LENGTH = 0x200
+  RAM (xrw)     : ORIGIN = 0x20000200, LENGTH = 32K - 0x200
+  FLASH (rx)    : ORIGIN = 0x08000000, LENGTH = 8K 
 }
 
 /* higher address of the user mode stack */
 _estack = 0x20000000 + 32K;
-_Minimum_Stack_Size = 0x3000 ;
 
 
 
@@ -17,21 +76,36 @@ _Minimum_Stack_Size = 0x3000 ;
 
 SECTIONS
 {
-	.free_page :
-	{
-		. = ALIGN(4);
-		KEEP(*(.free_page))
-		. = ALIGN(4);
-	} >FREE_PAGE
-
     /* for Cortex devices, the beginning of the startup code is stored in the .isr_vector section, which goes to FLASH */
-    .isr_vector :
+    .isr_vector 0x08000000 :
     {
 		. = ALIGN(4);
         KEEP(*(.isr_vector))            /* Startup code */
 		. = ALIGN(4);
-    } >FLASH
- 
+    } >FLASH=0xff
+
+    /* for some STRx devices, the beginning of the startup code is stored in the .flashtext section, which goes to FLASH */
+    .flashtext :
+    {
+		. = ALIGN(4);
+        *(.flashtext)            /* Startup code */
+		. = ALIGN(4);
+    } >FLASH=0xff
+    
+	.bootstrap_program_header_count 0x08000200 :
+	{
+		. = ALIGN(4);
+   	 	_bootstrap_program_header_count = . ;
+		KEEP(*(.bootstrap_program_header_count))
+	} >FLASH=0xff
+
+	.bootstrap_program_headers 0x08000204 :
+	{
+		. = ALIGN(4);
+		_bootstrap_program_headers = . ;
+        KEEP(*(.bootstrap_program_headers))
+	} >FLASH=0xff
+
     /* the program code is stored in the .text section, which goes to Flash */
     .text :
     {
@@ -45,24 +119,24 @@ SECTIONS
     	*(.ARM.extab* .gnu.linkonce.armextab.*)
     	*(.gcc_except_table)
 	   
-    } >FLASH
+    } >FLASH=0xff
     
     .eh_frame_hdr : ALIGN (4)
 	{
 		KEEP (*(.eh_frame_hdr))
-	} >FLASH
+	} >FLASH=0xff
 
 	.eh_frame : ALIGN (4)
 	{
 		KEEP (*(.eh_frame))
-	} >FLASH
+	} >FLASH=0xff
 
 	/* .ARM.exidx is sorted, so has to go in its own output section.  */
 	__exidx_start = .;
 	.ARM.exidx :
 	{
 		*(.ARM.exidx* .gnu.linkonce.armexidx.*)
-	} >FLASH
+	} >FLASH=0xff
     __exidx_end = .;
     
     .rodata : ALIGN (4)
@@ -108,9 +182,16 @@ SECTIONS
 		_etext = .;
 	    /* This is used by the startup in order to initialize the .data secion */
 		_sidata = _etext;
-	} >FLASH
+	} >FLASH=0xff
     
-    
+	/* the first 128 * 4 bytes of ram are put a side for the system bootstrap */ 
+    .isr_vector_ram (NOLOAD) :
+    {
+		. = 0;
+		. = ALIGN(4);
+        *(.isr_vector_ram)
+		. = 0x200;
+    } >ISR_VECT_RAM
 
     /* This is the initialized data section
     The program executes knowing that the data is in the RAM

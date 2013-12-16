@@ -1,12 +1,12 @@
 MEMORY
 {
-  RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 32K
-  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 256K - 2K
+  RAM (xrw) : ORIGIN = 0x20000200, LENGTH = 64K - 0x200
+  FLASH (rx) : ORIGIN = 0x08004000, LENGTH = 8K
   FREE_PAGE(xrx) : ORIGIN = 0x0803F800, LENGTH = 2K
 }
 
 /* higher address of the user mode stack */
-_estack = 0x20000000 + 32K;
+_estack = 0x20010000;
 _Minimum_Stack_Size = 0x3000 ;
 
 
@@ -27,6 +27,8 @@ SECTIONS
     /* for Cortex devices, the beginning of the startup code is stored in the .isr_vector section, which goes to FLASH */
     .isr_vector :
     {
+		. = ALIGN(4);
+		KEEP(*(.program_header))
 		. = ALIGN(4);
         KEEP(*(.isr_vector))            /* Startup code */
 		. = ALIGN(4);

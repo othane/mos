@@ -26,7 +26,7 @@
 //#include "spis.h"
 #include "nvm.h"
 #include "crc.h"
-//#include "bootstrap.h"
+#include "bootstrap.h"
 
 #ifndef NOHW_H
 #include <hw.h>     ///< this can be the default in the hal/stmf107x dir or your own for a custom system

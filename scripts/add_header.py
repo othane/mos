@@ -5,8 +5,7 @@ from collections import namedtuple
 import sys
 import os
 import StringIO
-import imp
-crc = imp.load_source('crc', './mos/lib/crc.py')
+import crc
 
 header_format = '<LLBLB'
 global header_addr
