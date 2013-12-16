@@ -13,7 +13,9 @@
 #include "hal.h"
 
 
+#ifndef PROGRAM_HEADERS
 #define PROGRAM_HEADERS 2
+#endif
 const uint32_t bootstrap_program_header_count at_symbol(".bootstrap_program_header_count") = PROGRAM_HEADERS;
 const bootstrap_prog_header * const bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = 
 {(void *)0xffffffff, (void *)0xffffffff};
