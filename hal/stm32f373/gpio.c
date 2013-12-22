@@ -393,9 +393,9 @@ void gpio_init_pin(gpio_pin_t *pin)
 	RCC_AHBPeriphResetCmd(pin_to_rcc_periph(pin), DISABLE);
 
 	// setup the pin configurations
-	GPIO_Init(pin->port, &pin->cfg);
 	if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
 		GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
+	GPIO_Init(pin->port, &pin->cfg);
 }
 
 
