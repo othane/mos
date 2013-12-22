@@ -23,7 +23,7 @@
 #include "../compiler.h"
 #include "sys.h"
 #include "gpio.h"
-//#include "spis.h"
+#include "spis.h"
 #include "nvm.h"
 #include "crc.h"
 //#include "bootstrap.h"
