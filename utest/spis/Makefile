@@ -1,6 +1,6 @@
 # build the spis unit test
 
-.PHONY: all clean
+.PHONY: all clean ../../hal/libhal.o
 
 PRJ = spis_utest
 PRJ_FULL = $(PRJ).hex
