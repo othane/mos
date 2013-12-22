@@ -16,7 +16,7 @@
 /**
  * list of slave spi device available oh this hw
  */
-extern spis_t spis3;
+extern spis_t spis_dev;
 
 
 #endif

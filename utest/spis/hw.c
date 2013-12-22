@@ -22,7 +22,7 @@
 	gpio_pin_t gpio_spi3_miso   = {GPIOB, {GPIO_Pin_4,  GPIO_Speed_50MHz, GPIO_Mode_AF_PP}};
 
 	#include <spis_hw.h>
-	spis_t spis3 =
+	spis_t spis_dev =
 	{
 		SPI3,   // channel
 		&gpio_spi3_nss, &gpio_spi3_sck, &gpio_spi3_miso, &gpio_spi3_mosi, // pins
@@ -37,7 +37,7 @@
 	gpio_pin_t gpio_spi3_miso   = {GPIOB, {GPIO_Pin_4,  GPIO_Mode_AF, GPIO_Speed_50MHz}, 6};
 
 	#include <spis_hw.h>
-	spis_t spis3 =
+	spis_t spis_dev =
 	{
 		SPI3,   // channel
 		{SPI_Direction_2Lines_FullDuplex, SPI_Mode_Slave, SPI_DataSize_8b, SPI_CPOL_Low, SPI_CPHA_1Edge, SPI_NSS_Hard, SPI_BaudRatePrescaler_2, SPI_FirstBit_MSB, 0},

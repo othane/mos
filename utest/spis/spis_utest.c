@@ -42,18 +42,18 @@ void read_complete(spis_t *spis, void *buf, uint16_t len, void *param)
 void test_init(void)
 {
 	// kick off io
-	spis_write(&spis3, write_buf, WRITE_BUF_LEN, write_complete, NULL);
-	spis_read(&spis3, read_buf, READ_BUF_LEN, read_complete, NULL);
+	spis_write(&spis_dev, write_buf, WRITE_BUF_LEN, write_complete, NULL);
+	spis_read(&spis_dev, read_buf, READ_BUF_LEN, read_complete, NULL);
 }
 
 
-void spis3_select(spis_t *spis, void *param)
+void spis_select(spis_t *spis, void *param)
 {
 	sys_nop();
 }
 
 
-void spis3_deselect(spis_t *spis, void *param)
+void spis_deselect(spis_t *spis, void *param)
 {
 	spis_cancel_read(spis);
 	spis_cancel_write(spis);
@@ -64,9 +64,9 @@ void spis3_deselect(spis_t *spis, void *param)
 void init(void)
 {
 	sys_init();
-	spis_init(&spis3);
-	spis_set_select_cb(&spis3, spis3_select, NULL);
-	spis_set_deselect_cb(&spis3, spis3_deselect, NULL);
+	spis_init(&spis_dev);
+	spis_set_select_cb(&spis_dev, spis_select, NULL);
+	spis_set_deselect_cb(&spis_dev, spis_deselect, NULL);
 }
 
 
