@@ -12,7 +12,7 @@ nvm:
 	make -C nvm
 
 spis:
-	#make -C spis
+	make -C spis
 
 crc:
 	make -C crc EMBEDDED=1
