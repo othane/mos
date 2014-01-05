@@ -12,7 +12,7 @@ libmos.o: $(OBJS)
 	$(LD) -r $(OBJS) -o $@
 
 hal/libhal.o:
-	make -C hal $(ARCH)
+	make -C hal
 
 lib/lib.o:
 	make -C lib lib.o
