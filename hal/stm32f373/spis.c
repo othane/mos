@@ -44,33 +44,34 @@ void spis_cancel_read(spis_t *spis)
 }
 
 
+static void spis_init_regs(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init_in)
+{
+	// init the spis itself
+	SPI_InitTypeDef st_spi_init = *st_spi_init_in;
+	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex; // only full duplex mode is supported atm
+	st_spi_init.SPI_Mode = SPI_Mode_Slave;		// this is a slave only module
+	st_spi_init.SPI_NSS = SPI_NSS_Soft;			// we only support soft NSS line atm
+	SPI_Init(channel, &st_spi_init);
+	
+	// enable the spis isrs
+	SPI_RxFIFOThresholdConfig(channel, SPI_RxFIFOThreshold_QF);
+	SPI_I2S_ITConfig(channel, SPI_I2S_IT_RXNE, ENABLE);
+	SPI_I2S_ITConfig(channel, SPI_I2S_IT_ERR, ENABLE);
+
+	// start spis device
+	SPI_Cmd(channel, ENABLE);
+}
+
+
 static void spis_flush_tx_fifo(spis_t * spis)
 {
 	// unfortunately st did not create a way to flush the fifo's out
 	// easily, the only way I have been able to achieve this is via a
 	// APB reset, then a re-init
-	switch ((uint32_t)spis->channel)
-	{
-		case (uint32_t)SPI1:
-			RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, ENABLE);
-			RCC_APB2PeriphResetCmd(RCC_APB2Periph_SPI1, DISABLE);
-			break;
-		case (uint32_t)SPI2:
-			RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI2, ENABLE);
-			RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI2, DISABLE);
-			break;
-		case (uint32_t)SPI3:
-			RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI3, ENABLE);
-			RCC_APB1PeriphResetCmd(RCC_APB1Periph_SPI3, DISABLE);
-			break;
+	SPI_I2S_DeInit(spis->channel);
 
-		default:
-			///@todo error out here
-			return;
-	}
-
-	///@todo we should not need to do a full re-init should we ?!?!
-	spis_init(spis);
+	// thanks to the re-init above we need to reset up all the spi regs again
+	spis_init_regs(spis->channel, &spis->st_spi_init);
 }
 
 
@@ -158,7 +159,6 @@ void spis_set_error_cb(spis_t *spis, spis_error_cb cb, void *param)
 
 void spis_init(spis_t *spis)
 {
-	SPI_InitTypeDef st_spi_init;
 	NVIC_InitTypeDef nvic_init;
 
 	// clear the buffers
@@ -204,25 +204,8 @@ void spis_init(spis_t *spis)
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);
 
-	// init the spis itself
-	SPI_I2S_DeInit(spis->channel);
-	SPI_StructInit(&st_spi_init);
-	st_spi_init.SPI_CPHA = spis->st_spi_init.SPI_CPHA;      // clock phase
-	st_spi_init.SPI_CPOL = spis->st_spi_init.SPI_CPOL;		// clock polarity
-	st_spi_init.SPI_DataSize = spis->st_spi_init.SPI_DataSize;
-	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex; // only full duplex mode is supported atm
-	st_spi_init.SPI_FirstBit = spis->st_spi_init.SPI_FirstBit;
-	st_spi_init.SPI_Mode = SPI_Mode_Slave;		// this is a slave only module
-	st_spi_init.SPI_NSS = SPI_NSS_Soft;			// we only support soft NSS line atm
-	SPI_Init(spis->channel, &st_spi_init);
-
-	// enable the spis isrs
-	SPI_RxFIFOThresholdConfig(spis->channel, SPI_RxFIFOThreshold_QF);
-	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_RXNE, ENABLE);
-	SPI_I2S_ITConfig(spis->channel, SPI_I2S_IT_ERR, ENABLE);
-
-	// start spis device
-	SPI_Cmd(spis->channel, ENABLE);
+	// set up all the spi settings, isr's, etc and start the spi
+	spis_init_regs(spis->channel, &spis->st_spi_init);
 }
 
 
@@ -406,12 +389,6 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	spis->write_complete_param = param;
 
 	// kick off the write by sending the first word the isr will handle sending the remaining bytes
-	volatile int lvl;
-	volatile FlagStatus bsy;
-	volatile ITStatus txe;
-	lvl = SPI_GetTransmissionFIFOStatus(spis->channel);
-	bsy = SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_BSY);
-	txe = SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_TXE);
 	while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE))
 	{
 		write_cb = spis_write_phase(spis, &write_cb_buf, &write_cb_len, &write_cb_param);
