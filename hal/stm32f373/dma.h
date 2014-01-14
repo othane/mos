@@ -28,6 +28,12 @@ void dma_memcpy(dma_t *dma, void *dst, void *src, int len, dma_memcpy_complete_e
 
 
 /**
+ * @brief cancel a running/pending dma request
+ */
+void dma_cancel(dma_t *dma);
+
+
+/**
  * @brief initialise a dma channel
  */
 void dma_init(dma_t *dma);

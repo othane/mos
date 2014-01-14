@@ -280,6 +280,16 @@ void dma_request(dma_request_t *req)
 	DMA_Cmd(dma->channel, ENABLE);
 }
 
+void dma_cancel(dma_t *dma)
+{
+	if (dma == NULL)
+		return;
+
+	DMA_Cmd(dma->channel, DISABLE);
+	dma_clear_gl(dma);
+	dma->reqs = NULL;
+}
+
 void dma_init(dma_t *dma)
 {
 	NVIC_InitTypeDef NVIC_InitStructure;
