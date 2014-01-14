@@ -17,7 +17,7 @@
 #define PROGRAM_HEADERS 2
 #endif
 const uint32_t bootstrap_program_header_count at_symbol(".bootstrap_program_header_count") = PROGRAM_HEADERS;
-const bootstrap_prog_header * const bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = 
+const bootstrap_prog_header * bootstrap_program_headers[PROGRAM_HEADERS] at_symbol(".bootstrap_program_headers") = 
 {(void *)0xffffffff, (void *)0xffffffff};
 
 
@@ -60,7 +60,9 @@ default_boot:
 bricked_boot:
 	// no valid programs to boot (we are useless like this)
 	while(1)
-	{}
+	{
+		sys_nop();
+	}
 
 	// keep gcc happy
 	return 0;
