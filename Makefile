@@ -27,4 +27,5 @@ clean:
 	make -C hal clean
 	make -C lib clean
 	make -C utest clean
+	-rm -f libmos.o
 

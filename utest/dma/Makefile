@@ -1,13 +1,13 @@
-# build the spis unit test
+# build the dma unit test
 
 .PHONY: all clean ../../hal/libhal.o
 
-PRJ = spis_utest
+PRJ = dma_utest
 PRJ_FULL = $(PRJ).hex
 
 include ../../hal/hal.mk
 
-SRC = spis_utest.c 
+SRC = dma_utest.c 
 SRC += hw.c
 
 OBJS = $(SRC:.c=.o)
