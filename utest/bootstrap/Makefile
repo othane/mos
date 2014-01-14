@@ -38,10 +38,10 @@ $(PRJ_FULL): ../lib/libcrc.so ../../bootstrap/bootstrap.hex $(APP1).hex $(APP2).
 	make -C ../../lib libcrc.so CC=gcc CFLAGS= CPFLAGS=
 
 $(APP1).elf: ../../hal/libhal.o $(OBJS1) $(LDSCRIPT)
-	$(CC) $(OBJS1) ../../hal/libhal.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -T$(LDSCRIPT1) -o $@
+	$(CC) $(OBJS1) ../../hal/libhal.o -Wl,-Map=$(APP1).map $(LDFLAGS) -T$(LDSCRIPT1) -o $@
 
 $(APP2).elf: ../../hal/libhal.o $(OBJS2) $(LDSCRIPT)
-	$(CC) $(OBJS2) ../../hal/libhal.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -T$(LDSCRIPT2) -o $@
+	$(CC) $(OBJS2) ../../hal/libhal.o -Wl,-Map=$(APP2).map $(LDFLAGS) -T$(LDSCRIPT2) -o $@
 
 ../../bootstrap/bootstrap.hex:
 	make -C ../../bootstrap/
