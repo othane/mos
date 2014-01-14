@@ -1,4 +1,4 @@
-.PHONY: clean all sys gpio nvm spis crc
+.PHONY: clean all sys gpio nvm spis crc bootstrap
 
 all: sys gpio nvm spis crc bootstrap
 
