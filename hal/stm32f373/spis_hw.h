@@ -14,6 +14,7 @@
 
 
 #include "hal.h"
+#include "dma_hw.h"
 
 
 // internal representation of a slave spi device
@@ -41,6 +42,8 @@ struct spis_t
 	int16_t read_count;                             ///< number of bytes actually read from the spi
 	spis_read_complete read_complete_cb;            ///< call this when number we have read read_buf_len bytes, or the spi transaction ends (nss hi)
 	void *read_complete_param;                      ///< user callback, pass it to read_cb
+	dma_t *rx_dma;									///< optional dma used for rx (ie dont use isr, do it in hw)
+	dma_request_t rx_dma_req;						///< used by rx_dma
 
 	// write buffers
 	uint8_t *write_buf;                             ///< buffer to transmit to the master
@@ -48,6 +51,8 @@ struct spis_t
 	int16_t write_count;                            ///< number of bytes transmitted so far
 	spis_write_complete write_complete_cb;          ///< call this when we have transmitted write_buf_len bytes, or the spi transaction ends (nss hi)
 	void *write_complete_param;                     ///< user callback, pass it to write_cb
+	dma_t *tx_dma;									///< optional dma used for tx (ie dont use isr, do it in hw)
+	dma_request_t tx_dma_req;						///< used by tx_dma
 };
 
 
