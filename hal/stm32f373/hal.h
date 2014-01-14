@@ -22,6 +22,7 @@
 /* hal components */
 #include "../compiler.h"
 #include "sys.h"
+#include "dma.h"
 #include "gpio.h"
 #include "spis.h"
 #include "nvm.h"
