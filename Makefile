@@ -1,17 +1,19 @@
-.PHONY: clean all utest
+LIBHAL = hal/libhal.o
+
+.PHONY: clean all utest $(LIBHAL)
 
 include hal/hal.mk
 
-OBJS =  hal/libhal.o \
+OBJS =  $(LIBHAL) \
 		lib/lib.o \
 
-all: libmos.o utest
+all: utest libmos.o 
 	echo "libmos built"
 
 libmos.o: $(OBJS)
 	$(LD) -r $(OBJS) -o $@
 
-hal/libhal.o:
+$(LIBHAL):
 	make -C hal
 
 lib/lib.o:

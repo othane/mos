@@ -1,6 +1,9 @@
 # build the sys unit test
+export HALCFG := $(shell pwd)/config
 
-.PHONY: all clean
+LIBHAL = ../../hal/libhal.o
+
+.PHONY: all clean $(LIBHAL)
 
 PRJ = sys_utest
 PRJ_FULL = $(PRJ).hex
@@ -23,10 +26,10 @@ LDFLAGS += -T$(LDSCRIPT)
 all: $(PRJ_FULL)
 	echo $(PRJ_FULL)
 
-$(PRJ).elf: ../../hal/libhal.o $(OBJS) $(LDSCRIPT)
-	$(CC) $(OBJS) ../../hal/libhal.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
+$(PRJ).elf: $(LIBHAL) $(OBJS) $(LDSCRIPT)
+	$(CC) $(OBJS) $(LIBHAL) -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
 
-../../hal/libhal.o:
+$(LIBHAL):
 	make -C ../../hal
 
 %.hex: %.elf

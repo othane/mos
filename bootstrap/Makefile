@@ -20,17 +20,19 @@ INC = $(patsubst %,-I%,$(INCDIR))
 LDSCRIPT = ../hal/$(ARCH)/bootstrap.ld
 LDFLAGS += -T$(LDSCRIPT)
 
+LIBHAL=libhal_bs.o
+
 all: $(PRJ_FULL)
 	echo $(PRJ_FULL)
 
-$(PRJ).elf: ../hal/libhal.o ../lib/lib.o $(OBJS) $(LDSCRIPT)
-	$(CC) $(OBJS) ../hal/libhal.o ../lib/lib.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
+$(PRJ).elf: ../hal/$(LIBHAL) ../lib/lib.o $(OBJS) $(LDSCRIPT)
+	$(CC) $(OBJS) ../hal/$(LIBHAL) ../lib/lib.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
 
 ../lib/lib.o:
-	make -C ../lib
+	make -C ../lib LIBHAL=$(LIBHAL)
 
-../hal/libhal.o:
-	make -C ../hal
+../hal/$(LIBHAL):
+	make -C ../hal LIBHAL=$(LIBHAL)
 
 %.hex: %.elf
 	$(BIN) $< $@
@@ -45,7 +47,7 @@ clean:
 	-rm -f $(PRJ).map
 	-rm -f $(PRJ).elf
 	-rm -f $(PRJ_FULL)
-	make -C ../hal clean
+	make -C ../hal clean LIBHAL=$(LIBHAL)
 	make -C ../lib clean
 	
 

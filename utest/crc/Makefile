@@ -1,6 +1,8 @@
 # build the crc unit test
 
-.PHONY: all clean
+LIBHAL = ../../hal/libhal.o
+
+.PHONY: all clean $(LIBHAL)
 
 PRJ = crc_utest
 ifdef EMBEDDED
@@ -37,8 +39,8 @@ all: $(PRJ_FULL)
 $(PRJ): ../../lib/libcrc.so $(OBJS)
 	$(CC) $(OBJS) -L../../lib -lcrc -o $@
 
-$(PRJ).elf: ../../hal/libhal.o ../../lib/lib.o $(OBJS) $(LDSCRIPT)
-	$(CC) $(OBJS) ../../hal/libhal.o ../../lib/lib.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
+$(PRJ).elf: $(LIBHAL) ../../lib/lib.o $(OBJS) $(LDSCRIPT)
+	$(CC) $(OBJS) $(LIBHAL) ../../lib/lib.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
 
 ../../lib/libcrc.so:
 	make -C ../../lib/ libcrc.so
@@ -46,7 +48,7 @@ $(PRJ).elf: ../../hal/libhal.o ../../lib/lib.o $(OBJS) $(LDSCRIPT)
 ../../lib/lib.o:
 	make -C ../../lib
 
-../../hal/libhal.o:
+$(LIBHAL):
 	make -C ../../hal
 
 %.hex: %.elf

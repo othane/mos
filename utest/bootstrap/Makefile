@@ -1,6 +1,8 @@
 # build the bootstrap unit test
 
-.PHONY: all clean
+LIBHAL = ../../hal/libhal.o
+
+.PHONY: all clean $(LIBHAL)
 
 PRJ = bootstrap_utest
 APP1 = app1
@@ -37,16 +39,16 @@ $(PRJ_FULL): ../lib/libcrc.so ../../bootstrap/bootstrap.hex $(APP1).hex $(APP2).
 ../lib/libcrc.so:
 	make -C ../../lib libcrc.so CC=gcc CFLAGS= CPFLAGS=
 
-$(APP1).elf: ../../hal/libhal.o $(OBJS1) $(LDSCRIPT)
-	$(CC) $(OBJS1) ../../hal/libhal.o -Wl,-Map=$(APP1).map $(LDFLAGS) -T$(LDSCRIPT1) -o $@
+$(APP1).elf: $(LIBHAL) $(OBJS1) $(LDSCRIPT)
+	$(CC) $(OBJS1) $(LIBHAL) -Wl,-Map=$(APP1).map $(LDFLAGS) -T$(LDSCRIPT1) -o $@
 
-$(APP2).elf: ../../hal/libhal.o $(OBJS2) $(LDSCRIPT)
-	$(CC) $(OBJS2) ../../hal/libhal.o -Wl,-Map=$(APP2).map $(LDFLAGS) -T$(LDSCRIPT2) -o $@
+$(APP2).elf: $(LIBHAL) $(OBJS2) $(LDSCRIPT)
+	$(CC) $(OBJS2) $(LIBHAL) -Wl,-Map=$(APP2).map $(LDFLAGS) -T$(LDSCRIPT2) -o $@
 
 ../../bootstrap/bootstrap.hex:
 	make -C ../../bootstrap/
 
-../../hal/libhal.o:
+$(LIBHAL):
 	make -C ../../hal
 
 %.hex: %.elf

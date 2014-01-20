@@ -1,9 +1,20 @@
-# make libs
+# make lib
 
 include stm32f373.mk
 
+ifneq ($(HALCFG),)
+include $(HALCFG)
+$(info using HALCFG file $(HALCFG))
+else
+$(warning no HALCFG file used $(HALCFG))
+endif
+
+LIBHAL?=libhal.o
+.PHONY: clean $(LIBHAL)
+
 CPFLAGS += -DNOHW_H 
 
+# system source files required for all systems using the stm32f373
 SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/Source/Templates/system_stm32f37x.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_misc.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_exti.c \
@@ -18,26 +29,30 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_syscfg.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_dma.c \
 	./syscalls.c \
-	./dma.c \
-	./sys.c \
-	./gpio.c \
 	./nvm.c \
 	./crc.c \
 	./bootstrap.c \
-	./spis.c
+	./sys.c
+
+# these files are only included when configured ... this is because they implement isr's and gcc cannot 
+# know that you aren't going to call these so it includes everything, and this can blow your code size ...
+# so by using the flags you can remove the overhead easily
+SRC-$(CONFIG_DMA) += ./dma.c
+SRC-$(CONFIG_GPIO) += ./gpio.c
+SRC-$(CONFIG_SPIS) += ./spis.c
 
 ASRC = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/Source/Templates/gcc_ride7/startup_stm32f37x.s
 
-OBJS = $(ASRC:.s=.o) $(SRC:.c=.o)
+OBJS = $(ASRC:.s=.o) $(SRC:.c=.o) $(SRC-y:.c=.o)
 
 INCDIR += ../../lib/ \
 	./
 
 INC = $(patsubst %,-I%,$(INCDIR))
 
-all: libhal.o
+all: $(LIBHAL)
 
-libhal.o: $(OBJS)
+$(LIBHAL): $(OBJS) $(HALCFG)
 	$(LD) -r $(OBJS) -o $@
 
 %.o : %.c
@@ -48,5 +63,5 @@ libhal.o: $(OBJS)
 
 clean:
 	-rm -f $(OBJS)
-	-rm -f libhal.o
+	-rm -f $(LIBHAL)
 

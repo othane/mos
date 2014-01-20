@@ -1,9 +1,13 @@
 # build the dma unit test
+export HALCFG := $(shell pwd)/config
 
-.PHONY: all clean ../../hal/libhal.o
+LIBHAL = ../../hal/libhal.o
+
+.PHONY: all clean $(LIBHAL)
 
 PRJ = dma_utest
 PRJ_FULL = $(PRJ).hex
+
 
 include ../../hal/hal.mk
 
@@ -21,10 +25,10 @@ LDFLAGS += -T$(LDSCRIPT)
 all: $(PRJ_FULL)
 	echo $(PRJ_FULL)
 
-$(PRJ).elf: ../../hal/libhal.o $(OBJS) $(LDSCRIPT)
-	$(CC) $(OBJS) ../../hal/libhal.o -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
+$(PRJ).elf: $(LIBHAL) $(OBJS) $(LDSCRIPT)
+	$(CC) $(OBJS) $(LIBHAL) -Wl,-Map=$(PRJ).map $(LDFLAGS) -o $@
 
-../../hal/libhal.o:
+$(LIBHAL):
 	make -C ../../hal
 
 %.hex: %.elf
