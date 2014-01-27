@@ -220,7 +220,7 @@ static spis_write_complete spis_write_phase(spis_t *spis, void **buf, uint16_t *
 }
 
 
-static void spis_irq_handler(int n)
+void spis_irq_handler(int n)
 {
 	spis_read_complete read_cb = NULL;
 	spis_write_complete write_cb = NULL;
