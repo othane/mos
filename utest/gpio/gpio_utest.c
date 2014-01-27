@@ -48,7 +48,7 @@ void init(void)
 
 int main(void)
 {
-	volatile bool pa_in_state;
+	volatile bool pa_in_state unused;
 	int k;
 
 	init();

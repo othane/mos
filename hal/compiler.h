@@ -29,7 +29,10 @@
 	#define force_inline __forceinline                          // force this function to inline
 
 	// weak functions
-	#define weak() __weak
+	#define weak __weak
+
+	// unused object (don't warn)
+	#define unused __attribute__((unused))
 
 #elif (__GNUC__)
 	/* gcc compiler */
@@ -48,6 +51,9 @@
 	// weak functions
 	#define weak __attribute((weak))
 
+	// unused object (don't warn)
+	#define unused __attribute__((unused))
+
 #elif (__IAR_SYSTEMS_ICC__)
 	/* iar compiler */
 
@@ -63,7 +69,10 @@
 	#define force_inline                                            // not supported
 
 	// weak functions
-	#define weak() __weak
+	#define weak __weak
+
+	///@todo unused object (don't warn)
+	#define unused 
 
 #endif
 
