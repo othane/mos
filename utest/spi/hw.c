@@ -70,6 +70,7 @@
 		//.tx_dma = &spis_tx_dma,
 	};
 	
+	#include <spim_hw.h>
 	spim_t spim_dev =
 	{
 		.channel = SPI1,   // channel

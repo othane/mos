@@ -32,6 +32,7 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 	./nvm.c \
 	./crc.c \
 	./bootstrap.c \
+	./spi.c \
 	./sys.c
 
 # these files are only included when configured ... this is because they implement isr's and gcc cannot 
@@ -40,6 +41,7 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 SRC-$(CONFIG_DMA) += ./dma.c
 SRC-$(CONFIG_GPIO) += ./gpio.c
 SRC-$(CONFIG_SPIS) += ./spis.c
+SRC-$(CONFIG_SPIM) += ./spim.c
 
 ASRC = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/Source/Templates/gcc_ride7/startup_stm32f37x.s
 

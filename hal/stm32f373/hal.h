@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "gpio.h"
 #include "spis.h"
+#include "spim.h"
 #include "nvm.h"
 #include "crc.h"
 #include "bootstrap.h"
