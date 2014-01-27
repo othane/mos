@@ -24,9 +24,13 @@
 #include <stdio.h>
 #endif
 
+#ifndef unused
+#define unused __attribute__((unused))
+#endif
+
 
 static const char msg[40] = "Hello world this is a message to crc\x00\x00\x00\x00";
-static uint32_t known_msg_crc = 0xb3c8cbe8;
+static uint32_t known_msg_crc unused = 0xb3c8cbe8;
 uint32_t crc_tbl[256];
 struct crc_h h =
 {
@@ -67,9 +71,13 @@ uint32_t run_crc(void)
 #define CRC_MATCH(crc) ((crc == known_msg_crc)? 'p': 'f')
 int main(void)
 {
-	uint32_t crc_soft, crc_tab, crc_best;
+	uint32_t crc_soft unused;
+	uint32_t crc_tab unused;
+	uint32_t crc_best unused;
+	#ifdef PRINT_RESULT
 	int i;
 	char res;
+	#endif
 
 	init();
 	

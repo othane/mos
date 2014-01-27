@@ -41,7 +41,7 @@ void init(void)
 
 int main(void)
 {
-	volatile bool pa15_state;
+	volatile bool pa15_state unused;
 
 	init();
 
