@@ -15,13 +15,293 @@
 #include "gpio_hw.h"
 #include "dma_hw.h"
 
-static void spis_flush_rx_fifo(spis_t *spis)
+
+static void spi_gpio_init(gpio_pin_t *nss, gpio_pin_t *sck, gpio_pin_t *miso, gpio_pin_t *mosi)
+{
+	gpio_init_pin(nss);
+	gpio_init_pin(sck);
+	gpio_init_pin(miso);
+	gpio_init_pin(mosi);
+}
+
+
+static void spi_clk_init(SPI_TypeDef *channel)
+{
+	switch ((uint32_t)channel)
+	{
+		case (uint32_t)SPI1:
+			RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
+			break;
+		case (uint32_t)SPI2:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
+			break;
+		case (uint32_t)SPI3:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
+			break;
+		default:
+			///@todo error out here
+			return;
+	}
+}
+
+
+static void spi_init_regs(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init_in)
+{
+	// init the spi itself
+	SPI_InitTypeDef st_spi_init = *st_spi_init_in;
+	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex; // only full duplex mode is supported atm
+	SPI_I2S_DeInit(channel);
+	SPI_Init(channel, &st_spi_init);
+	
+	// enable the spi isrs
+	SPI_RxFIFOThresholdConfig(channel, SPI_RxFIFOThreshold_QF);
+	SPI_I2S_ITConfig(channel, SPI_I2S_IT_ERR, ENABLE);
+}
+
+
+static void spi_flush_tx_fifo(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init)
+{
+	// unfortunately st did not create a way to flush the fifo's out
+	// easily, the only way I have been able to achieve this is via a
+	// APB reset, then a re-init
+	SPI_I2S_DeInit(channel);
+
+	// thanks to the re-init above we need to reset up all the spi regs again
+	spi_init_regs(channel, st_spi_init);
+}
+
+
+static void spi_flush_rx_fifo(SPI_TypeDef *channel)
 {
 	// the easiest/only way to clear the rx fifo is to read out 
 	// all the bytes until the RXNE flag is cleared (note this 
 	// will require rx thresh = QF (I think)
-	while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_RXNE) == SET)
-		SPI_I2S_ReceiveData16(spis->channel);
+	while (SPI_I2S_GetFlagStatus(channel, SPI_I2S_FLAG_RXNE) == SET)
+		SPI_I2S_ReceiveData16(channel);
+}
+
+
+#define DIR_RX 0
+#define DIR_TX 1
+static uint32_t __NULL;
+static void spi_dma_cfg(int dir, SPI_TypeDef *channel, dma_request_t *dma_req, void *buf, int len)
+{
+	DMA_InitTypeDef *spi_cfg = &dma_req->st_dma_init;
+
+	spi_cfg->DMA_PeripheralBaseAddr = (uint32_t)&channel->DR;
+	spi_cfg->DMA_MemoryBaseAddr = (uint32_t)buf;
+	if (buf == NULL)
+	{
+		// this NULL is a possible security hole as multiple io may read/write to
+		// this, it is only really for dbg and a real buffer should really be used
+		// at all times
+		spi_cfg->DMA_MemoryBaseAddr = (uint32_t)&__NULL;
+		spi_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
+	}
+	spi_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	spi_cfg->DMA_MemoryInc = DMA_MemoryInc_Enable;
+	spi_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	spi_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
+	spi_cfg->DMA_Mode = DMA_Mode_Normal;
+	spi_cfg->DMA_Priority = DMA_Priority_High;
+	spi_cfg->DMA_M2M = DMA_M2M_Disable;
+	spi_cfg->DMA_BufferSize = len;
+	spi_cfg->DMA_DIR = dir ? DMA_DIR_PeripheralDST: DMA_DIR_PeripheralSRC;
+}
+
+
+// look up the irq channel for this spi master and save a look up for this object when the isr happens
+static spim_t *spim_irq_list[3] = {NULL,};  ///< just store the spis handle so we can get it in the irq (then hw.c is more free form)
+static uint8_t spim_irq(spim_t *spim)
+{
+	switch ((uint32_t)spim->channel)
+	{
+		case (uint32_t)SPI1:
+			spim_irq_list[0] = spim;
+			return SPI1_IRQn;
+		case (uint32_t)SPI2:
+			spim_irq_list[1] = spim;
+			return SPI2_IRQn;
+		case (uint32_t)SPI3:
+			spim_irq_list[2] = spim;
+			return SPI3_IRQn;
+		default:
+			///@todo error
+			return 0x00;
+	}
+}
+
+
+void spim_read_phase(spim_t *spim)
+{
+	uint8_t b = SPI_ReceiveData8(spim->channel);
+
+	// put the new byte into the read buffer
+	if (spim->read_count < spim->len)
+	{
+		if (spim->read_buf != NULL)
+			spim->read_buf[spim->read_count] = b;
+		spim->read_count++;
+	}
+}
+
+
+bool spim_write_phase(spim_t *spim)
+{
+	uint8_t b;
+
+	if (spim->write_count < spim->len)
+	{
+		if (spim->write_buf == NULL)
+			b = 0x00;	// if null buffer transmit a dummy byte so the reads still occur
+		else
+			b = spim->write_buf[spim->write_count];
+		SPI_SendData8(spim->channel, b);
+		spim->write_count++;
+		return true;
+	}
+	return false;
+}
+
+
+void spim_clear_io(spim_t *spim)
+{
+	spim->xfer_complete = NULL;
+	spim->xfer_complete_param = NULL;
+	spim->read_buf = NULL;
+	spim->write_buf = NULL;
+	spim->read_count = 0;
+	spim->write_count = 0;
+	spim->len = 0;
+}
+
+
+void spim_irq_handler(int n)
+{
+	spim_t *spim = spim_irq_list[n];
+
+	// sanity check that spis should run
+	if (spim == NULL)
+		return;
+
+	//@todo check for errors (what errors can the master have really ?)
+	
+	// read phase (read the Rx register)
+	if (SPI_I2S_GetITStatus(spim->channel, SPI_I2S_IT_RXNE) == SET)
+		spim_read_phase(spim);
+	
+	// write phase (reload the Tx register if it is empty and the isr is enabled)
+	if (SPI_I2S_GetITStatus(spim->channel, SPI_I2S_IT_TXE) == SET)
+		spim_write_phase(spim);
+
+	// handle completion callback
+	if (spim->read_count == spim->len)
+	{
+		spim_xfer_complete complete = spim->xfer_complete;
+		void *param = spim->xfer_complete_param;
+		void *read_buf = spim->read_buf;
+		void *write_buf = spim->write_buf;
+		int16_t len = spim->len;
+		SPI_Cmd(spim->channel, DISABLE);
+		gpio_set_pin(spim->nss, 1);
+		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, DISABLE);
+		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, DISABLE);
+		spim_clear_io(spim);
+		if (complete != NULL)
+			complete(spim, 0x00, read_buf, write_buf, len, param);
+	}
+}
+
+
+void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
+{
+
+	sys_enter_critical_section();
+
+	if (spim->read_buf != NULL || spim->read_count != 0 ||
+	    spim->write_buf != NULL || spim->write_count != 0)
+		///@todo xfer in progress already
+		goto done;
+
+	// load xfer details
+	spim->read_buf = read_buf;
+	spim->read_count = 0;
+	spim->write_buf = write_buf;
+	spim->write_count = 0;
+	spim->len = len;
+	spim->xfer_complete = complete;
+	spim->xfer_complete_param = param;
+
+	// flush the buffers so the xfer begins a new
+	spi_flush_rx_fifo(spim->channel);
+	spi_flush_tx_fifo(spim->channel, &spim->st_spi_init);
+
+	// init the read
+	if (len <= 4 || spim->rx_dma == NULL)
+	{
+		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, ENABLE);
+	}
+	else
+	{
+		spim->rx_dma_req.complete = NULL;
+		spim->rx_dma_req.complete_param = NULL;
+		spim->rx_dma_req.dma = spim->rx_dma;
+		spi_dma_cfg(DIR_RX, spim->channel, &spim->rx_dma_req, spim->read_buf, spim->len);
+		SPI_I2S_DMACmd(spim->channel, SPI_I2S_DMAReq_Rx, ENABLE);
+		dma_request(&spim->rx_dma_req);
+	}
+	
+	// init the write
+	SPI_Cmd(spim->channel, ENABLE);
+	gpio_set_pin(spim->nss, 0);
+	if (len < 4 || spim->tx_dma == NULL)
+	{
+		// just write 1 byte, let the isr take over the rest
+		spim_write_phase(spim);
+		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, ENABLE);
+	}
+	else
+	{
+		spim->tx_dma_req.complete = NULL;
+		spim->tx_dma_req.complete_param = NULL;
+		spim->tx_dma_req.dma = spim->tx_dma;
+		spi_dma_cfg(DIR_TX, spim->channel, &spim->tx_dma_req, spim->write_buf, spim->len);
+		SPI_I2S_DMACmd(spim->channel, SPI_I2S_DMAReq_Tx, ENABLE);
+		dma_request(&spim->tx_dma_req);
+	}
+
+done:
+	sys_leave_critical_section();
+}
+
+
+void spim_init(spim_t *spim)
+{
+	NVIC_InitTypeDef nvic_init;
+
+	// init the spim gpio lines
+	spi_gpio_init(spim->nss, spim->sck, spim->miso, spim->mosi);
+	gpio_set_pin(spim->nss, 1);
+	
+	// init the spim clk
+	spi_clk_init(spim->channel);
+	
+	// setup the spim isr
+	nvic_init.NVIC_IRQChannelCmd = ENABLE;
+	nvic_init.NVIC_IRQChannel = spim_irq(spim);
+	nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic_init.NVIC_IRQChannelSubPriority = 0;
+	nvic_init.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&nvic_init);
+	
+	// init dma if present
+	if (spim->rx_dma)
+		dma_init(spim->rx_dma);
+	if (spim->tx_dma)
+		dma_init(spim->tx_dma);
+
+	// set up all the spi settings, isr's, etc and start the spi
+	spi_init_regs(spim->channel, &spim->st_spi_init);
 }
 
 
@@ -34,45 +314,16 @@ static void spis_clear_read(spis_t *spis)
 	spis->read_count = 0;
 	spis->read_complete_cb = NULL;
 	spis->read_complete_param = NULL;
-	spis_flush_rx_fifo(spis);
-	dma_cancel(spis->rx_dma);
+	spi_flush_rx_fifo(spis->channel);
+	if (spis->rx_dma)
+		dma_cancel(spis->rx_dma);
 }
 
 
 // outside world interface to cancel a read op
-void spis_cancel_read(spis_t *spis)
+void spis_flush_read(spis_t *spis)
 {
 	spis_clear_read(spis);
-}
-
-
-static void spis_init_regs(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init_in)
-{
-	// init the spis itself
-	SPI_InitTypeDef st_spi_init = *st_spi_init_in;
-	st_spi_init.SPI_Direction = SPI_Direction_2Lines_FullDuplex; // only full duplex mode is supported atm
-	st_spi_init.SPI_Mode = SPI_Mode_Slave;		// this is a slave only module
-	st_spi_init.SPI_NSS = SPI_NSS_Soft;			// we only support soft NSS line atm
-	SPI_Init(channel, &st_spi_init);
-	
-	// enable the spis isrs
-	SPI_RxFIFOThresholdConfig(channel, SPI_RxFIFOThreshold_QF);
-	SPI_I2S_ITConfig(channel, SPI_I2S_IT_ERR, ENABLE);
-
-	// start spis device
-	SPI_Cmd(channel, ENABLE);
-}
-
-
-static void spis_flush_tx_fifo(spis_t * spis)
-{
-	// unfortunately st did not create a way to flush the fifo's out
-	// easily, the only way I have been able to achieve this is via a
-	// APB reset, then a re-init
-	SPI_I2S_DeInit(spis->channel);
-
-	// thanks to the re-init above we need to reset up all the spi regs again
-	spis_init_regs(spis->channel, &spis->st_spi_init);
 }
 
 
@@ -85,14 +336,18 @@ static void spis_clear_write(spis_t *spis, bool flush)
 	spis->write_count = 0;
 	spis->write_complete_cb = NULL;
 	spis->write_complete_param = NULL;
-	dma_cancel(spis->tx_dma);
+	if (spis->tx_dma)
+		dma_cancel(spis->tx_dma);
 	if (flush)
-		spis_flush_tx_fifo(spis);
+	{
+		spi_flush_tx_fifo(spis->channel, &spis->st_spi_init);
+		SPI_Cmd(spis->channel, ENABLE);
+	}
 }
 
 
 // outside world interface to cancel a write op
-void spis_cancel_write(spis_t *spis)
+void spis_flush_write(spis_t *spis)
 {
 	spis_clear_write(spis, true);
 }
@@ -100,7 +355,7 @@ void spis_cancel_write(spis_t *spis)
 
 // look up the irq channel for this spi slave and save a look up for this object when the isr happens
 static spis_t *spis_irq_list[3] = {NULL,};  ///< just store the spis handle so we can get it in the irq (then hw.c is more free form)
-uint8_t spis_irq(spis_t *spis)
+static uint8_t spis_irq(spis_t *spis)
 {
 	switch ((uint32_t)spis->channel)
 	{
@@ -168,30 +423,10 @@ void spis_init(spis_t *spis)
 	spis_clear_write(spis, false);
 
 	// init the spis gpio lines
-	// we seem to need to init a [so I choose these since they need to be inited anyway] gpio 
-	// before the spi_clk or else irqs dont seem to work and possibly the whole spis doesnt
-	gpio_init_pin(spis->nss);
-	gpio_init_pin(spis->sck);
-	gpio_init_pin(spis->miso);
-	gpio_init_pin(spis->mosi);
+	spi_gpio_init(spis->nss, spis->sck, spis->miso, spis->mosi);
 
 	// init the spis clk
-	switch ((uint32_t)spis->channel)
-	{
-		case (uint32_t)SPI1:
-			RCC_APB2PeriphClockCmd(RCC_APB2Periph_SPI1, ENABLE);
-			break;
-		case (uint32_t)SPI2:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
-			break;
-		case (uint32_t)SPI3:
-			RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
-			break;
-
-		default:
-			///@todo error out here
-			return;
-	}
+	spi_clk_init(spis->channel);
 
 	// setup the select / deselect callbacks
 	///@todo we might not want to do this for all spis devs, perhaps there should be a flag in the spis_t
@@ -213,7 +448,8 @@ void spis_init(spis_t *spis)
 		dma_init(spis->tx_dma);
 
 	// set up all the spi settings, isr's, etc and start the spi
-	spis_init_regs(spis->channel, &spis->st_spi_init);
+	spi_init_regs(spis->channel, &spis->st_spi_init);
+	SPI_Cmd(spis->channel, ENABLE);
 }
 
 
@@ -271,17 +507,17 @@ static spis_write_complete spis_write_phase(spis_t *spis, void **buf, uint16_t *
 }
 
 
-static void spis_irq_handler(spis_t *spis)
+static void spis_irq_handler(int n)
 {
 	spis_read_complete read_cb = NULL;
 	spis_write_complete write_cb = NULL;
 	void *read_cb_buf, *write_cb_buf;
 	uint16_t read_cb_len, write_cb_len;
 	void *read_cb_param, *write_cb_param;
+	spis_t *spis = spis_irq_list[n];
 
 	// sanity check that spis should run
 	if (spis == NULL)
-		// this spis is not setup
 		return;
 
 	// check for errors and report them
@@ -313,24 +549,27 @@ static void spis_irq_handler(spis_t *spis)
 }
 
 
-// handle the spi1 isr (only handles slave atm)
+// handle the spi1 isr
 void SPI1_IRQHandler(void)
 {
-	spis_irq_handler(spis_irq_list[0]);
+	spis_irq_handler(0);
+	spim_irq_handler(0);
 }
 
 
-// handle the spi1 isr (only handles slave atm)
+// handle the spi1 isr
 void SPI2_IRQHandler(void)
 {
-	spis_irq_handler(spis_irq_list[1]);
+	spis_irq_handler(1);
+	spim_irq_handler(1);
 }
 
 
-// handle the spi1 isr (only handles slave atm)
+// handle the spi1 isr
 void SPI3_IRQHandler(void)
 {
-	spis_irq_handler(spis_irq_list[2]);
+	spis_irq_handler(2);
+	spim_irq_handler(2);
 }
 
 
@@ -373,47 +612,6 @@ static void spis_tx_dma_complete(dma_request_t *req, void *param)
 }
 
 
-#define DIR_RX 0
-#define DIR_TX 1
-static uint32_t __NULL;
-static void spis_dma_cfg(spis_t *spis, int dir)
-{
-	DMA_InitTypeDef *spis_cfg = dir ? &spis->tx_dma_req.st_dma_init: &spis->rx_dma_req.st_dma_init;
-
-	spis_cfg->DMA_PeripheralBaseAddr = (uint32_t)&spis->channel->DR;
-	spis_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	spis_cfg->DMA_MemoryInc = DMA_MemoryInc_Enable;
-	spis_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-	spis_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-	spis_cfg->DMA_Mode = DMA_Mode_Normal;
-	spis_cfg->DMA_Priority = DMA_Priority_High;
-	spis_cfg->DMA_M2M = DMA_M2M_Disable;
-
-	if (dir)
-	{
-		spis_cfg->DMA_MemoryBaseAddr = (uint32_t)spis->write_buf;
-		if (spis->write_buf == NULL)
-		{
-			spis_cfg->DMA_MemoryBaseAddr = (uint32_t)&__NULL;
-			spis_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
-		}
-		spis_cfg->DMA_BufferSize = spis->write_buf_len;
-		spis_cfg->DMA_DIR = DMA_DIR_PeripheralDST;
-	}
-	else
-	{
-		spis_cfg->DMA_MemoryBaseAddr = (uint32_t)spis->read_buf;
-		if (spis->read_buf == NULL)
-		{
-			spis_cfg->DMA_MemoryBaseAddr = (uint32_t)&__NULL;
-			spis_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
-		}
-		spis_cfg->DMA_BufferSize = spis->read_buf_len;
-		spis_cfg->DMA_DIR = DMA_DIR_PeripheralSRC;
-	}
-}
-
-
 void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, void *param)
 {
 	spis_read_complete read_cb = NULL;
@@ -453,7 +651,7 @@ void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, voi
 		spis->rx_dma_req.complete = spis_rx_dma_complete;
 		spis->rx_dma_req.complete_param = spis;
 		spis->rx_dma_req.dma = spis->rx_dma;
-		spis_dma_cfg(spis, DIR_RX);
+		spi_dma_cfg(DIR_RX, spis->channel, &spis->rx_dma_req, spis->read_buf, spis->read_buf_len);
 		SPI_I2S_DMACmd(spis->channel, SPI_I2S_DMAReq_Rx, ENABLE);
 		dma_request(&spis->rx_dma_req);
 	}
@@ -491,8 +689,8 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 	
 	if (len < 4 || spis->tx_dma == NULL)
 	{
-		// if we are only writing 3 bytes or less its better to do this using interrupts so
-		// kick off the write by sending the first word the isr will handle sending the remaining bytes
+		// if we are only writing 3 bytes or less or have no dma its better to do this using interrupts
+		// so kick off the write by sending the first bytes the isr will handle sending the remaining bytes
 		while (SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_TXE))
 		{
 			write_cb = spis_write_phase(spis, &write_cb_buf, &write_cb_len, &write_cb_param);
@@ -509,7 +707,7 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
 		spis->tx_dma_req.complete = spis_tx_dma_complete;
 		spis->tx_dma_req.complete_param = spis;
 		spis->tx_dma_req.dma = spis->tx_dma;
-		spis_dma_cfg(spis, DIR_TX);
+		spi_dma_cfg(DIR_TX, spis->channel, &spis->tx_dma_req, spis->write_buf, spis->write_buf_len);
 		SPI_I2S_DMACmd(spis->channel, SPI_I2S_DMAReq_Tx, ENABLE);
 		dma_request(&spis->tx_dma_req);
 	}

@@ -13,6 +13,50 @@
 #ifndef __SPIS__
 #define __SPIS__
 
+/**
+ * @brief opaque master spi type
+ */
+typedef struct spim_t spim_t;
+
+
+/**
+ * @brief setup the master spi device
+ * @param spim spi master to init
+ */
+void spim_init(spim_t *spim);
+
+
+/**
+ * @brief callback when a spim xfer completes
+ * @param spim spi master to use
+ * @param addr address of the slave to xfer to
+ * @param read_len fill this many bytes into the read buf
+ * @param write_buf send data from here to the MOSI
+ * @param len write & read this many byte to/from the read/write buf's
+ * @param param completion parameter
+ */
+typedef void (*spim_xfer_complete)(spim_t *spim, int addr, void *read_buf, void *write_buf, uint16_t len, void *param);
+
+
+/**
+ * @brief start a spi master transfer
+ * @param spim spi master to use
+ * @param addr address of the slave to xfer to
+ * @param read_len fill this many bytes into the read buf
+ * @param write_buf send data from here to the MOSI
+ * @param len write & read this many byte to/from the read/write buf's
+ * @param complete call this when len bytes are transfered
+ * @param param complete parameter
+ */
+void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
+
+
+/**
+ * @brief flush the current spi master xfer
+ * @param spim spi master to flush
+ */
+void spim_flush(spim_t *spim);
+
 
 /**
  * @brief opaque slave spi type
@@ -105,7 +149,7 @@ void spis_read(spis_t *spis, void *buf, uint16_t len, spis_read_complete cb, voi
  * @brief cancel a read operation
  * @param spis spis slave device to cancel the read for
  */
-void spis_cancel_read(spis_t *spis);
+void spis_flush_read(spis_t *spis);
 
 
 /**
@@ -133,7 +177,7 @@ void spis_write(spis_t *spis, void *buf, uint16_t len, spis_write_complete cb, v
  * @brief cancel a write operation
  * @param spis spis slave device to cancel the write for
  */
-void spis_cancel_write(spis_t *spis);
+void spis_flush_write(spis_t *spis);
 
 
 /**

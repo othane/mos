@@ -55,8 +55,8 @@ void spis_select(spis_t *spis, void *param)
 
 void spis_deselect(spis_t *spis, void *param)
 {
-	spis_cancel_read(spis);
-	spis_cancel_write(spis);
+	spis_flush_read(spis);
+	spis_flush_write(spis);
 	test_init();
 }
 
