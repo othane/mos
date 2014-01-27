@@ -49,11 +49,19 @@
 	#include <dma_hw.h>
 	dma_t spis_rx_dma =
 	{
-		.channel = DMA2_Channel1,
+		.channel = DMA1_Channel4,
 	};
 	dma_t spis_tx_dma =
 	{
-		.channel = DMA2_Channel2,
+		.channel = DMA1_Channel5,
+	};
+	dma_t spim_rx_dma =
+	{
+		.channel = DMA1_Channel2,
+	};
+	dma_t spim_tx_dma =
+	{
+		.channel = DMA1_Channel3,
 	};
 
 	#include <spis_hw.h>
@@ -66,8 +74,8 @@
 		.miso = &gpio_spi2_miso, // miso gpio
 		.mosi = &gpio_spi2_mosi, // mosi gpio
 
-		//.rx_dma = &spis_rx_dma,
-		//.tx_dma = &spis_tx_dma,
+		.rx_dma = &spis_rx_dma,
+		.tx_dma = &spis_tx_dma,
 	};
 	
 	#include <spim_hw.h>
@@ -80,7 +88,7 @@
 		.miso = &gpio_spi1_miso, // miso gpio
 		.mosi = &gpio_spi1_mosi, // mosi gpio
 
-		//.rx_dma = &spis_rx_dma,
-		//.tx_dma = &spis_tx_dma,
+		.rx_dma = &spim_rx_dma,
+		.tx_dma = &spim_tx_dma,
 	};
 #endif

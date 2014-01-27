@@ -121,6 +121,24 @@ void spim_irq_handler(int n)
 }
 
 
+void spim_rx_dma_complete(dma_request_t *req, void *param)
+{
+	spim_t *spim = (spim_t *)param;
+	spim_xfer_complete complete = spim->xfer_complete;
+	void *spim_xfer_param = spim->xfer_complete_param;
+	void *read_buf = spim->read_buf;
+	void *write_buf = spim->write_buf;
+	int16_t len = spim->len;
+	SPI_Cmd(spim->channel, DISABLE);
+	gpio_set_pin(spim->nss, 1);
+	SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, DISABLE);
+	SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, DISABLE);
+	spim_clear_io(spim);
+	if (complete != NULL)
+		complete(spim, 0x00, read_buf, write_buf, len, spim_xfer_param);
+}
+
+
 void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
 {
 
@@ -151,8 +169,8 @@ void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len,
 	}
 	else
 	{
-		spim->rx_dma_req.complete = NULL;
-		spim->rx_dma_req.complete_param = NULL;
+		spim->rx_dma_req.complete = spim_rx_dma_complete;
+		spim->rx_dma_req.complete_param = spim;
 		spim->rx_dma_req.dma = spim->rx_dma;
 		spi_dma_cfg(SPI_DMA_DIR_RX, spim->channel, &spim->rx_dma_req, spim->read_buf, spim->len);
 		SPI_I2S_DMACmd(spim->channel, SPI_I2S_DMAReq_Rx, ENABLE);
@@ -170,6 +188,8 @@ void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len,
 	}
 	else
 	{
+		// since we complete when the last byte is read (this obviously happens after the last byte
+		// is transmitted) we don't need a complete routine for this.
 		spim->tx_dma_req.complete = NULL;
 		spim->tx_dma_req.complete_param = NULL;
 		spim->tx_dma_req.dma = spim->tx_dma;
