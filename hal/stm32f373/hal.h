@@ -28,6 +28,7 @@
 #include "spim.h"
 #include "nvm.h"
 #include "crc.h"
+#include "adc.h"
 #include "bootstrap.h"
 
 #ifndef NOHW_H
