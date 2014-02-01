@@ -5,6 +5,7 @@ from collections import namedtuple
 import sys
 import os
 import StringIO
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import crc
 
 header_format = '<LLBLB'
