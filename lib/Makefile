@@ -34,5 +34,6 @@ clean:
 	-rm -f $(OBJS)
 	-rm -f lib.o
 	-rm -f $(CRCLIBNAME).so
+	-rm -f $(CRCLIBNAME).o
 	-rm -f $(OBJS:.o=.lst)
 
