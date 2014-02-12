@@ -36,4 +36,5 @@ clean:
 	-rm -f $(CRCLIBNAME).so
 	-rm -f $(CRCLIBNAME).o
 	-rm -f $(OBJS:.o=.lst)
+	-rm -f crc.pyc
 
