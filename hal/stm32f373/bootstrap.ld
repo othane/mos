@@ -1,5 +1,4 @@
 /*
-Default linker script for STM32F10x_512K_64K
 Copyright RAISONANCE S.A.S. 2008
 
 Modified for High Density devices
@@ -27,13 +26,7 @@ by Oliver Thane, 2013
  * +================================================================+
  */
 
-/* include the common STM32F10x sub-script */
-
-/* Common part of the linker scripts for STM32 devices*/
-
-
 /* default stack sizes. 
-
 These are used by the startup in order to allocate stacks for the different modes.
 */
 
@@ -52,12 +45,7 @@ There will be a link error if there is not this amount of RAM free at the end.
 _Minimum_Stack_Size = __Stack_Size ;
 
 
-/* include the memory spaces definitions sub-script */
-/*
-Linker subscript for STM32F10x definitions with 512K Flash and 64K RAM */
-
 /* Memory Spaces Definitions */
-
 MEMORY
 {
   ISR_VECT_RAM  : ORIGIN = 0x20000000, LENGTH = 0x200
@@ -68,16 +56,11 @@ MEMORY
 /* higher address of the user mode stack */
 _estack = 0x20000000 + 32K;
 
-
-
-/* include the sections management sub-script for FLASH mode */
-
 /* Sections Definitions */
-
 SECTIONS
 {
     /* for Cortex devices, the beginning of the startup code is stored in the .isr_vector section, which goes to FLASH */
-    .isr_vector 0x08000000 :
+    .isr_vector :
     {
 		. = ALIGN(4);
         KEEP(*(.isr_vector))            /* Startup code */
