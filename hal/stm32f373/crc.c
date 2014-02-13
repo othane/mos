@@ -1,7 +1,7 @@
 /**
  * @file crc.c
  *
- * @brief implement the crc module for the stm32107
+ * @brief implement the crc module for the stm32f373
  *
  * @author OT
  *
@@ -15,7 +15,7 @@
 #include "hal.h"
 
 
-struct crc_h stm32f10x_crc_h =
+struct crc_h stm32f373_crc_h =
 {
 	// this setup mimics the stm32 32bit crc hardware
 	// see: https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fCRC%20calculation%20in%20software&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=3822
@@ -90,7 +90,7 @@ uint32_t crc_buf_hard(struct crc_h *h, const void *buf, uint32_t len, bool reset
 bool crc_init_hard(struct crc_h *h)
 {
 	// if the cm config matches the hardware we are good to go !!
-	if (!cm_t_compare(&h->cm, &stm32f10x_crc_h.cm))
+	if (!cm_t_compare(&h->cm, &stm32f373_crc_h.cm))
 		return false;
 
 	// crc hw is a shared resource so we need to lock around it

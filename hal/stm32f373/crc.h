@@ -14,6 +14,6 @@
 
 /* use this setup to use the hardware accelerated crc module */
 #include "../../lib/crc.h"
-extern struct crc_h stm32f10x_crc_h;
+extern struct crc_h stm32f373_crc_h;
 
 #endif

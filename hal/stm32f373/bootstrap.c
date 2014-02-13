@@ -63,7 +63,7 @@ static void crc_setup(void)
 {
 	static bool do_crc_init = true;
 	if (do_crc_init == true)
-		crc_init(&stm32f10x_crc_h);
+		crc_init(&stm32f373_crc_h);
 	do_crc_init = false;
 }
 
@@ -86,7 +86,7 @@ bool bootstrap_validate_prog(const bootstrap_prog_header *header)
 	
 	// check the crc
 	crc_setup();
-	crc = crc_buf(&stm32f10x_crc_h, &header->len, header->len - sizeof(header->crc), true);
+	crc = crc_buf(&stm32f373_crc_h, &header->len, header->len - sizeof(header->crc), true);
 	if (header->crc != crc)
 		return false;
 	
