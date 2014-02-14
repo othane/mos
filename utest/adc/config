@@ -1,0 +1,3 @@
+CONFIG_DMA = n
+CONFIG_GPIO = y
+CONFIG_ADC = y
