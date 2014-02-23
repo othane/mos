@@ -82,12 +82,17 @@ int32_t adc_read(adc_channel_t *channel)
 {
 	int32_t r;
 	struct adc_t *adc = channel->adc;
+
+	SDADC_ChannelSelect(adc->base, channel->number);
+
 	SDADC_SoftwareStartConv(adc->base);
 	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_REOC) == RESET)
 	{}
+
 	r = SDADC_GetConversionValue(adc->base);
 	if (adc->SDADC_AINStructure[channel->conf].SDADC_InputMode == SDADC_InputMode_SEZeroReference)
 		r += 32768;
+
 	return r;
 }
 
@@ -104,6 +109,5 @@ void adc_channel_init(adc_channel_t *channel)
 
 	// link this channel to its config
 	SDADC_ChannelConfig(adc->base, channel->number, channel->conf);
-	SDADC_ChannelSelect(adc->base, channel->number);
 }
 
