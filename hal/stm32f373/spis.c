@@ -233,16 +233,27 @@ void spis_irq_handler(int n)
 	if (spis == NULL)
 		return;
 
-	// check for errors and report them
-	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
-	{
-		if (spis->error_cb != NULL)
-			spis->error_cb(spis, SPIS_ERR_OVRRUN, spis->error_cb_param);
-	}
+	// check for errors and report them (UDR error must come first as SPI_I2S_GetITStatus
+	// will read the SR reg and clear the UDR run error on the first check)
 	if (SPI_I2S_GetITStatus(spis->channel, I2S_IT_UDR) == SET)
 	{
 		if (spis->error_cb != NULL)
 			spis->error_cb(spis, SPIS_ERR_UNDRUN, spis->error_cb_param);
+	}
+	if (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
+	{
+		if (spis->error_cb != NULL)
+			spis->error_cb(spis, SPIS_ERR_OVRRUN, spis->error_cb_param);
+
+		// if the overrun was not cleared in the error cb then we must 
+		// clear it ourself or we will keep getting this error irq
+		// if a read is setup to use interrupts then try to keep the bytes we have using spis_read_phase
+		// otherwise just do a read to clear the error, followed by a read on the SR reg
+		while (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
+		{
+			SPI_ReceiveData8(spis->channel);
+			SPI_I2S_GetFlagStatus(spis->channel, SPI_I2S_FLAG_OVR);
+		}
 	}
 
 	// read phase (read the Rx register)
