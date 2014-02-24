@@ -247,8 +247,9 @@ void spis_irq_handler(int n)
 
 		// if the overrun was not cleared in the error cb then we must 
 		// clear it ourself or we will keep getting this error irq
-		// if a read is setup to use interrupts then try to keep the bytes we have using spis_read_phase
-		// otherwise just do a read to clear the error, followed by a read on the SR reg
+		// just do a read to clear the error, followed by a read on the SR reg 
+		// (the data stream is already poked, there is no point trying to get the last
+		// valid byte out really)
 		while (SPI_I2S_GetITStatus(spis->channel, SPI_I2S_IT_OVR) == SET)
 		{
 			SPI_ReceiveData8(spis->channel);
