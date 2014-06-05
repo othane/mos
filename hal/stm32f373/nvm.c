@@ -40,6 +40,12 @@ uint32_t nvm_erase(void *addr, uint32_t len)
 	uint32_t b = 0;
 	uint32_t _addr = (uint32_t)addr;
 
+	// since we cannot read from the flash during a write/erase cycle
+	// letting interrupts run could cause a read and an error, or it 
+	// could cause the unlock to fail, so lets do the lot in a critical
+	// section
+	sys_enter_critical_section();
+
 	// align to the start of a page
 	_addr = _addr - (_addr % PAGE_SIZE);
 
@@ -50,11 +56,13 @@ uint32_t nvm_erase(void *addr, uint32_t len)
 		///back up the whole page and just erase len
 		///bytes and restore the rest
 		if (!_nvm_erase(_addr, PAGE_SIZE))
-			return b;
+			goto done;
 		_addr += PAGE_SIZE;
 		b += PAGE_SIZE;
 	}
 
+done:
+	sys_leave_critical_section();
 	return b;
 }
 
@@ -120,25 +128,32 @@ static bool flash_write_word(uint16_t *dst, uint16_t *src)
 bool nvm_write(void *dst, const void *src, uint32_t len)
 {
 	uint16_t *_src = (uint16_t *)src, *_dst = dst;
+	bool r = false;
 
 	// sanity checks
 	if ((uint32_t)_dst % 2)
 		///@todo page must be 2 byte aligned
 		return false;
 
+	// since we cannot read from the flash during a write/erase cycle
+	// letting interrupts run could cause a read and an error, or it 
+	// could cause the unlock to fail, so lets do the lot in a critical
+	// section
+	sys_enter_critical_section();
+
 	// wait for the flash to be free, unlock it, and wait for it to be free again for the writing
 	if (!flash_wait())
-		return false;
+		goto done;
 	FLASH_Unlock();
 	if (!flash_wait())
-		return false;
+		goto done;
 
 	// write the bytes as 16bit words
 	while (len > 1)
 	{
 		// write the next word
 		if (!flash_write_word(_dst, _src))
-			return false;
+			goto done;
 		len -= 2;
 		_dst++;
 		_src++;
@@ -150,10 +165,13 @@ bool nvm_write(void *dst, const void *src, uint32_t len)
 		uint16_t last_word = *_src;
 		last_word |= 0xFF00; // little endian (0xFF is erased state)
 		if (!flash_write_word(_dst, &last_word))
-			return false;
+			goto done;
 	}
 
 	// job done !
-	return true;
+	r = true;
+done:
+	sys_leave_critical_section();
+	return r;
 }
 
