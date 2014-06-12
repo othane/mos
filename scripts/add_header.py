@@ -59,7 +59,8 @@ prog = header2ih(prog, header) # put the length back into the intel hex file for
 
 # update the header crc (note we do no include the CRC word in the CRC)
 crc_start_addr = prog.minaddr() + 4
-buf = prog.tobinstr(start=crc_start_addr, pad=0xff)
+prog.padding = 0xff
+buf = prog.tobinstr(start=crc_start_addr)
 crc.crc_init(crc.stm32f10x_crc_h)
 crc = crc.crc_buf(crc.stm32f10x_crc_h, buf, len(buf)) & 0xffffffff
 header['crc'] = crc
