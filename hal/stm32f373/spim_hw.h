@@ -22,12 +22,14 @@ struct spim_t
 {
 	SPI_TypeDef *channel;
 	SPI_InitTypeDef st_spi_init;					///< details of how the spim should run (not all options are supported yet)
+	uint16_t idle_address;							///< address to select when the bus is idle
 
 	// device pins
-	gpio_pin_t *nss, *sck, *miso, *mosi;
-	gpio_pin_t **addr;
+	gpio_pin_t **nss;								///< null terminated array of address pin where the first item is the LSB and the last is the MSB in the address
+	gpio_pin_t *sck, *miso, *mosi;					///< other standard spi lines
 
 	// transfer
+	uint16_t addr;									///< address to direct the transfer too
 	uint8_t *read_buf;                              ///< buffer to store the slave data
 	int16_t read_count;                             ///< number of bytes received so far
 	uint8_t *write_buf;                             ///< buffer to transmit to the slave

@@ -18,6 +18,27 @@
 #include "dma_hw.h"
 
 
+// set the address/nss lines
+static void set_addr(spim_t *spim, uint16_t addr)
+{
+	gpio_pin_t **nss;
+
+	// do this addressing as quickly as possible so it looks
+	// continuous (some chips might get accidentally addressed
+	// very quickly like this, but the alternative it to use
+	// ports instead of pins which is less flexible)
+	sys_enter_critical_section();
+	for (nss = spim->nss; *nss != NULL; addr >>= 1, nss++)
+	{
+		if (addr & 0x01)
+			gpio_set_pin(*nss, 0);
+		else
+			gpio_set_pin(*nss, 1);
+	}
+	sys_leave_critical_section();
+}
+
+
 // look up the irq channel for this spi master and save a look up for this object when the isr happens
 static spim_t *spim_irq_list[3] = {NULL,};  ///< just store the spim handle so we can get it in the irq (then hw.c is more free form)
 static uint8_t spim_irq(spim_t *spim)
@@ -111,12 +132,12 @@ void spim_irq_handler(int n)
 		void *write_buf = spim->write_buf;
 		int16_t len = spim->len;
 		SPI_Cmd(spim->channel, DISABLE);
-		gpio_set_pin(spim->nss, 1);
+		set_addr(spim, spim->idle_address); // go to idle bus state
 		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, DISABLE);
 		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, DISABLE);
 		spim_clear_io(spim);
 		if (complete != NULL)
-			complete(spim, 0x00, read_buf, write_buf, len, param);
+			complete(spim, spim->addr, read_buf, write_buf, len, param);
 	}
 }
 
@@ -130,16 +151,16 @@ void spim_rx_dma_complete(dma_request_t *req, void *param)
 	void *write_buf = spim->write_buf;
 	int16_t len = spim->len;
 	SPI_Cmd(spim->channel, DISABLE);
-	gpio_set_pin(spim->nss, 1);
+	set_addr(spim, spim->idle_address); // go to idle bus state
 	SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, DISABLE);
 	SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, DISABLE);
 	spim_clear_io(spim);
 	if (complete != NULL)
-		complete(spim, 0x00, read_buf, write_buf, len, spim_xfer_param);
+		complete(spim, spim->addr, read_buf, write_buf, len, spim_xfer_param);
 }
 
 
-void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
+void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
 {
 
 	sys_enter_critical_section();
@@ -150,6 +171,7 @@ void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len,
 		goto done;
 
 	// load xfer details
+	spim->addr = addr;
 	spim->read_buf = read_buf;
 	spim->read_count = 0;
 	spim->write_buf = write_buf;
@@ -179,7 +201,7 @@ void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len,
 	
 	// init the write
 	SPI_Cmd(spim->channel, ENABLE);
-	gpio_set_pin(spim->nss, 0);
+	set_addr(spim, spim->addr);
 	if (len < 4 || spim->tx_dma == NULL)
 	{
 		// just write 1 byte, let the isr take over the rest
@@ -206,10 +228,13 @@ done:
 void spim_init(spim_t *spim)
 {
 	NVIC_InitTypeDef nvic_init;
+	gpio_pin_t **nss;
 
-	// init the spim gpio lines
-	spi_gpio_init(spim->nss, spim->sck, spim->miso, spim->mosi);
-	gpio_set_pin(spim->nss, 1);
+	// init the spim gpio lines (we will do the nss ourselves as this is an array)
+	spi_gpio_init(NULL, spim->sck, spim->miso, spim->mosi);
+	for (nss = spim->nss; *nss != NULL; nss++)
+		gpio_init_pin(*nss);
+	set_addr(spim, spim->idle_address); // go to idle bus state
 	
 	// init the spim clk
 	spi_clk_init(spim->channel);
