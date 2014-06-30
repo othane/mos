@@ -36,7 +36,7 @@ void spim_init(spim_t *spim);
  * @param len write & read this many byte to/from the read/write buf's
  * @param param completion parameter
  */
-typedef void (*spim_xfer_complete)(spim_t *spim, int addr, void *read_buf, void *write_buf, uint16_t len, void *param);
+typedef void (*spim_xfer_complete)(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, uint16_t len, void *param);
 
 
 /**
@@ -49,7 +49,7 @@ typedef void (*spim_xfer_complete)(spim_t *spim, int addr, void *read_buf, void 
  * @param complete call this when len bytes are transfered
  * @param param complete parameter
  */
-void spim_xfer(spim_t *spim, int addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
+void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
 
 
 /**
