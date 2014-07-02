@@ -50,6 +50,37 @@ uint32_t sys_get_tick(void);
 
 
 /**
+ * @brief return the number of ticks between beginning and end and handle wrapping
+ * @param beginning lower bound on the time interval
+ * @param end upper bound on the time interval
+ * @note this function assumes beginning was recorded before end, @see sys_tick_diff
+ * if this is not guaranteed
+ */
+uint32_t sys_abs_tick_diff(uint32_t beginning, uint32_t end);
+
+
+/**
+ * @brief return the number of ticks t2 is from t1 (if t2 is earlier than t1 result is negative)
+ * @param t1 the reference point if t2 is larger this function returns positive, else negative
+ * @param t2 "
+ * @note this function resolves the inherent ambiguity between t2 being earlier/later than t1 by
+ * trying to minimise the tick difference, ie if t1 = 11 and t2 = 10 the result would be -1, not 
+ * MAX_TICKS-1. This is simply the most useful way to resolve this ambiguity
+ * @see sys_abs_tick_diff for an alternative method (only positive)
+ */
+int32_t sys_tick_diff(uint32_t t1, uint32_t t2);
+
+
+/**
+ * @brief call func with args in argv
+ * @param func function pointer to run
+ * @param argc number of argument for this func
+ * @param argv arguments for this func
+ */
+void sys_run(void *func, uint8_t argc, uint32_t argv[]);
+
+
+/**
  * @brief do a software reset of the system
  */
 void sys_reset(void);

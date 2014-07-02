@@ -168,6 +168,63 @@ uint32_t sys_get_tick(void)
 }
 
 
+// determine the number of ticks between end and beginning
+uint32_t sys_abs_tick_diff(uint32_t beginning, uint32_t end)
+{
+	if (end >= beginning)
+		// standard case 
+		// |----b--------------e----|
+		//      <-------------->     UINT32_MAX
+		return end - beginning;
+	else
+		// wrapped case
+		// |----e--------------b----|
+		// <---->      +       <---->UINT32_MAX
+		return (UINT32_MAX - beginning) + end;
+}
+
+// determine the number of tick t1 is away from t2 (negative if t2 is earlier than t1)
+int32_t sys_tick_diff(uint32_t t1, uint32_t t2)
+{
+	uint32_t tdiff1 = sys_abs_tick_diff(t1, t2);
+	uint32_t tdiff2 = sys_abs_tick_diff(t2, t1);
+
+	if (tdiff1 < tdiff2)
+		// t1 is likely earlier than t2, otherwise the time difference is very large
+		//                  t1       t2
+		// |-----------------x--------x-----|
+		//                   ----------        < tdiff1, more likely as the two times are closer together
+		//  -----------------          -----   < tdiff2
+		return tdiff1; // positive as t2 is in the future relative to t1
+	else
+		// t2 is likely later than t1, otherwise the time difference is very large
+		//                  t2       t1
+		// |-----------------x--------x-----|
+		//  -----------------          -----   < tdiff1
+		//                   ----------        < tdiff2, more likely as the two times are closer together
+		return -tdiff2; // negative as t2 is in the past relative to t1
+}
+
+
+typedef void (*sys_task)(uint32_t p0, uint32_t p1, uint32_t p2, uint32_t p3);
+void sys_run(void *func, uint8_t argc, uint32_t argv[])
+{
+	sys_task t;
+	if (!func)
+		return;
+	if (argc > 4)
+		///@todo error out here we only support 4 params atm
+		return;
+
+	// atm just support 4 params (this is easy as the call below just 
+	// puts the 4 param into R0..R3, if we want more then they will need
+	// to be pushed onto the stack which is much harder as the types matter
+	// then)
+	t = (sys_task)func;
+	t(argv[0], argv[1], argv[2], argv[3]);
+}
+
+
 // soft reset the whole cpu
 void sys_reset(void)
 {
