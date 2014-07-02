@@ -1,6 +1,6 @@
-.PHONY: clean all sys gpio nvm spis crc bootstrap
+.PHONY: clean all sys gpio nvm spis crc bootstrap sched
 
-all: sys gpio nvm spis crc bootstrap
+all: sys gpio nvm spis crc bootstrap sched
 
 sys:
 	make -C sys
@@ -20,6 +20,9 @@ crc:
 bootstrap:
 	make -C bootstrap
 
+sched:
+	make -C sched
+
 clean:
 	make -C sys clean
 	make -C gpio clean
@@ -27,4 +30,5 @@ clean:
 	make -C spis clean
 	make -C crc EMBEDDED=1 clean
 	make -C bootstrap clean
+	make -C sched clean
 

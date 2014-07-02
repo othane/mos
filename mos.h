@@ -13,6 +13,7 @@
 #define __MOS__
 
 #include "hal/hal.h"
+#include "sched/sched.h"
 
 #endif
 
