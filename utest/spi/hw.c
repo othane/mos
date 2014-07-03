@@ -79,11 +79,13 @@
 	};
 	
 	#include <spim_hw.h>
+	gpio_pin_t *spim_dev_nss[] = {&gpio_spi1_nss, NULL};
 	spim_t spim_dev =
 	{
 		.channel = SPI1,   // channel
 		.st_spi_init = {SPI_Direction_2Lines_FullDuplex, SPI_Mode_Master, SPI_DataSize_8b, SPI_CPOL_Low, SPI_CPHA_1Edge, SPI_NSS_Soft, SPI_BaudRatePrescaler_256, SPI_FirstBit_MSB, 0},
-		.nss = &gpio_spi1_nss, // select line gpio
+		.idle_address = 0x00, // bus should go to this state when idle
+		.nss = spim_dev_nss, // nss/address lines
 		.sck = &gpio_spi1_sck, // clk line gpio
 		.miso = &gpio_spi1_miso, // miso gpio
 		.mosi = &gpio_spi1_mosi, // mosi gpio
