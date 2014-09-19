@@ -1,7 +1,7 @@
 # setup compiler and flags for stm32f373 build
 SELF_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 
-CROSS_COMPILE = arm-none-eabi-
+CROSS_COMPILE ?= arm-none-eabi-
 export CC = $(CROSS_COMPILE)gcc
 export AS = $(CROSS_COMPILE)gcc -x assembler-with-cpp
 export AR = $(CROSS_COMPILE)ar
