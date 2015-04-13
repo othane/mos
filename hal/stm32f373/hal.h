@@ -29,6 +29,7 @@
 #include "nvm.h"
 #include "crc.h"
 #include "adc.h"
+#include "pwm.h"
 #include "bootstrap.h"
 
 #ifndef NOHW_H

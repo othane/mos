@@ -42,6 +42,13 @@ void sys_leave_critical_section(void);
 
 
 /**
+ * @brief return the system clock frequency
+ * @return system clock frequency in Hz
+ */
+uint32_t sys_clk_freq(void);
+
+
+/**
  * @brief get the number of 1ms intervals since boot
  * @note there is not attempt to deal with rollovers in this function
  * @return the number of 1ms ticks that have occurred since boot time
