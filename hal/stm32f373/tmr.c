@@ -107,7 +107,7 @@ uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq)
 			goto done;
 	}
 
-	// if we got here we could not make a PWM slow enough so we will do the
+	// if we got here we could not make a timer slow enough so we will do the
 	// slowest we can !
 
 done:
