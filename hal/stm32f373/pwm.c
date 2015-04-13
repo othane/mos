@@ -23,15 +23,19 @@ static void TIM_OCxInit(TIM_TypeDef *tim, TIM_OCInitTypeDef *oc_cfg, uint16_t ch
 	{
 		case TIM_Channel_1:
 			TIM_OC1Init(tim, oc_cfg);
+			TIM_OC1PreloadConfig(tim, TIM_OCPreload_Enable); // just do this to avoid glitching when changing the duty
 			break;
 		case TIM_Channel_2:
 			TIM_OC2Init(tim, oc_cfg);
+			TIM_OC2PreloadConfig(tim, TIM_OCPreload_Enable);
 			break;
 		case TIM_Channel_3:
 			TIM_OC3Init(tim, oc_cfg);
+			TIM_OC3PreloadConfig(tim, TIM_OCPreload_Enable);
 			break;
 		case TIM_Channel_4:
 			TIM_OC4Init(tim, oc_cfg);
+			TIM_OC4PreloadConfig(tim, TIM_OCPreload_Enable);
 			break;
 	}
 }
@@ -73,7 +77,6 @@ void pwm_set_duty(pwm_channel_t *pwm, float duty)
 	{
 		// if the timer is stopped then we will re-init the whole thing (there is no real
 		// down side in doing this and it handles the init case easily)
-		TIM_CCPreloadControl(tmr->tim, ENABLE); // just do this to avoid glitching when changing the duty
 		pwm->oc_cfg.TIM_Pulse = ccr;
 		TIM_OCxInit(tmr->tim, &pwm->oc_cfg, pwm->ch);
 		tmr->tim->EGR = TIM_PSCReloadMode_Immediate;
