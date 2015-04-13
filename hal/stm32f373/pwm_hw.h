@@ -14,17 +14,8 @@
 
 
 #include "hal.h"
+#include "tmr_hw.h"
 #include "gpio_hw.h"
-
-
-// internal representation of a pwm
-typedef struct tmr_t tmr_t;
-struct tmr_t
-{
-	TIM_TypeDef *tim;				///< which timer do you want to use
-	uint32_t period;
-	TIM_TimeBaseInitTypeDef cfg;
-};
 
 
 // internal representation of a adc channel
@@ -35,12 +26,9 @@ struct pwm_channel_t
 	gpio_pin_t *pin;				///< output pin or NULL for none
 
 	uint16_t ch;					///< timer channel (can be TIM_Channel_1 .. TIM_Channel_4)
-	uint32_t freq;					///< frequency of the PWM in Hz
 	float duty;						///< duty of the PWM from 0..1.0 (100%)
 	TIM_OCInitTypeDef oc_cfg;		///< configure mode as either TIM_OCMode_PWM1|2
 };
 
-
 #endif
-
 

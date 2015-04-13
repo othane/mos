@@ -42,7 +42,7 @@ void pwm_stop(pwm_channel_t *pwm);
  * @note this change effects the whole timer !
  * @return actual frequency found in Hz
  */
-int pwm_set_freq(pwm_channel_t *pwm, uint32_t freq);
+uint32_t pwm_set_freq(pwm_channel_t *pwm, uint32_t freq);
 
 
 /**

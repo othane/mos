@@ -29,6 +29,7 @@
 #include "nvm.h"
 #include "crc.h"
 #include "adc.h"
+#include "tmr.h"
 #include "pwm.h"
 #include "bootstrap.h"
 

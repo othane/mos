@@ -20,7 +20,6 @@
 
 #elif defined STM32F37X
 #include <stm32f37x_conf.h>
-#include <gpio_hw.h>
 #include <pwm_hw.h>
 
 gpio_pin_t pwm0_pin = 
@@ -34,13 +33,13 @@ gpio_pin_t pwm0_pin =
 
 tmr_t tmr3 = {
 	.tim = TIM3,
+	.freq = 1000,
 };
 
 pwm_channel_t pwm0 = {
 	.tmr = &tmr3,
 	.pin = &pwm0_pin,
 	.ch = TIM_Channel_3,
-	.freq = 1000,
 	.duty = 0.5,
 	.oc_cfg = { .TIM_OCMode = TIM_OCMode_PWM1, .TIM_OutputState = TIM_OutputState_Enable,
 				.TIM_OCPolarity = TIM_OCPolarity_High}
