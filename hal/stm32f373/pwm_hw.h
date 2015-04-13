@@ -18,7 +18,7 @@
 #include "gpio_hw.h"
 
 
-// internal representation of a adc channel
+// internal representation of a pwm channel
 typedef struct pwm_channel_t pwm_channel_t;
 struct pwm_channel_t
 {
