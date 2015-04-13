@@ -1,5 +1,5 @@
 /**
- * @file pwm.h
+ * @file pwm_hw.h
  *
  * @brief this contains hw definitions for configuration via hw.c only (it is not a run time interface !)
  *
