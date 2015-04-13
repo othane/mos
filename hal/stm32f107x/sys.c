@@ -138,6 +138,13 @@ void sys_leave_critical_section(void)
 }
 
 
+// get the system clock speed in Hz
+uint32_t sys_clk_freq(void)
+{
+	return SYS_CLK;
+}
+
+
 // setup the tick handler interrupt rate
 static void sys_tick_init()
 {
