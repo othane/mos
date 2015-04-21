@@ -20,6 +20,16 @@ typedef struct adc_channel_t adc_channel_t;
 
 
 /**
+ * @brief read count values from the adc channel given and call cb when done
+ * @param ch channel to read from
+ * @param dst buffer to store adc vales
+ * @param count number of conversions to do (caller must ensure buf is large enough)
+ */
+typedef void (*adc_trace_complete_t)(adc_channel_t *ch, volatile int16_t *dst, int count, void *param);
+void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_complete_t cb, void *param);
+
+
+/**
  * @brief read a single value from the adc channel
  * @param ch channel to read from
  */

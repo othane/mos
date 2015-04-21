@@ -11,28 +11,54 @@
  *
  */
 
-
+#include <string.h>
 #include <hal.h>
-#define CHAN adc_chanD
 
+adc_channel_t *chan = &adc_chanC;
+volatile uint16_t buf[4096];
+volatile uint32_t val = 0;
+
+volatile void *vmemset(volatile void *s, int8_t c, size_t n)
+{
+	volatile unsigned char *p = s;
+	while (n--)
+		*p++ = (unsigned char)c;
+	return s;
+}
 
 void init(void)
 {
 	sys_init();
-	adc_channel_init(&CHAN);
+	adc_channel_init(chan);
+	vmemset(buf, 0x00, sizeof(buf));
+}
+
+void adc_handle_buffer(volatile uint16_t *dst, int len)
+{
+	sys_nop();
+}
+
+void adc_complete(adc_channel_t *ch, volatile int16_t *dst, int len, void *param)
+{
+	int n;
+	for (n=0; n < len; n++)
+		buf[n] += 32767;
+
+	val = adc_read(ch);
+	adc_handle_buffer((volatile uint16_t *)dst, len);
+
+	vmemset(buf, 0x00, sizeof(buf));
+	adc_trace(ch, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), adc_complete, param);
 }
 
 int main(void)
 {
-	int32_t val unused;
-
 	init();
 
+	val = adc_read(chan);
+	adc_trace(chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), adc_complete, NULL);
 	while (1)
-	{
-		val = adc_read(&CHAN);
-		sys_spin(1);
-	}
+	{}
 
 	return 0;
 }

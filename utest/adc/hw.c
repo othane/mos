@@ -23,88 +23,94 @@
 #include <gpio_hw.h>
 #include <adc_hw.h>
 
-gpio_pin_t adc_chanA_pin = 
+gpio_pin_t adc_pe12_pin = 
 {
 	.port = GPIOE,
 	.cfg = {.GPIO_Pin = GPIO_Pin_12, .GPIO_Mode = GPIO_Mode_AN, 
-			.GPIO_Speed = GPIO_Speed_50MHz, .GPIO_PuPd = GPIO_PuPd_NOPULL},
+			.GPIO_PuPd = GPIO_PuPd_NOPULL},
 };
 
 
-gpio_pin_t adc_chanB_pin = 
+gpio_pin_t adc_pe11_pin = 
 {
 	.port = GPIOE,
 	.cfg = {.GPIO_Pin = GPIO_Pin_11, .GPIO_Mode = GPIO_Mode_AN, 
-			.GPIO_Speed = GPIO_Speed_50MHz, .GPIO_PuPd = GPIO_PuPd_NOPULL},
+			.GPIO_PuPd = GPIO_PuPd_NOPULL},
 };
 
 
-gpio_pin_t adc_chanC_pin = 
+gpio_pin_t adc_pe10_pin = 
 {
 	.port = GPIOE,
 	.cfg = {.GPIO_Pin = GPIO_Pin_10, .GPIO_Mode = GPIO_Mode_AN, 
-			.GPIO_Speed = GPIO_Speed_50MHz, .GPIO_PuPd = GPIO_PuPd_NOPULL},
+			.GPIO_PuPd = GPIO_PuPd_NOPULL},
 };
 
 
-gpio_pin_t adc_chanD_pin = 
+gpio_pin_t adc_pe9_pin = 
 {
 	.port = GPIOE,
 	.cfg = {.GPIO_Pin = GPIO_Pin_9, .GPIO_Mode = GPIO_Mode_AN, 
-			.GPIO_Speed = GPIO_Speed_50MHz, .GPIO_PuPd = GPIO_PuPd_NOPULL},
+			.GPIO_PuPd = GPIO_PuPd_NOPULL},
 };
 
 
-adc_t adc0 =
+dma_t adc1_dma =
+{
+	.channel = DMA2_Channel3,
+};
+
+
+adc_t adc1 =
 {
 	.base = SDADC1,
 	.ref = SDADC_VREF_Ext,
 	.SDADC_AINStructure = 
 	{
 		{.SDADC_InputMode = SDADC_InputMode_SEZeroReference, .SDADC_Gain = SDADC_Gain_1,
-			.SDADC_CommonMode = SDADC_CommonMode_VSSA, .SDADC_Offset = 0},
+			.SDADC_CommonMode = SDADC_CommonMode_VSSA},
 		{.SDADC_InputMode = SDADC_InputMode_SEZeroReference, .SDADC_Gain = SDADC_Gain_1,
-			.SDADC_CommonMode = SDADC_CommonMode_VSSA, .SDADC_Offset = 0},
+			.SDADC_CommonMode = SDADC_CommonMode_VSSA},
 		{.SDADC_InputMode = SDADC_InputMode_SEZeroReference, .SDADC_Gain = SDADC_Gain_1,
-			.SDADC_CommonMode = SDADC_CommonMode_VSSA, .SDADC_Offset = 0},
+			.SDADC_CommonMode = SDADC_CommonMode_VSSA},
 	},
+	.dma = &adc1_dma,
 };
 
 
 adc_channel_t adc_chanA =
 {
-	.adc = &adc0,
+	.adc = &adc1,
 	.number = SDADC_Channel_0,
 	.conf = SDADC_Conf_0,
-	.pin = &adc_chanA_pin,
+	.pin = &adc_pe12_pin,
 };
 
 
 adc_channel_t adc_chanB =
 {
-	.adc = &adc0,
+	.adc = &adc1,
 	.number = SDADC_Channel_1,
 	.conf = SDADC_Conf_0,
-	.pin = &adc_chanB_pin,
+	.pin = &adc_pe11_pin,
 };
 
 
 adc_channel_t adc_chanC =
 {
-	.adc = &adc0,
+	.adc = &adc1,
 	.number = SDADC_Channel_2,
 	.conf = SDADC_Conf_0,
-	.pin = &adc_chanC_pin,
+	.pin = &adc_pe10_pin,
 };
 
 
 adc_channel_t adc_chanD =
 {
-	.adc = &adc0,
+	.adc = &adc1,
 	.number = SDADC_Channel_7,
 	.conf = SDADC_Conf_0,
-	.pin = &adc_chanD_pin,
+	.pin = &adc_pe9_pin,
 };
-
 
 #endif
