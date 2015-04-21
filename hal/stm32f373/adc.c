@@ -50,11 +50,21 @@ static uint32_t adc_pwr_periph(SDADC_TypeDef *base)
 
 static void adc_init(adc_t *adc)
 {
+	uint32_t sadc_clk_div = adc->sadc_clk_div;
+
 	// set adc clk to 6MHz
 	RCC_APB2PeriphClockCmd(adc_apb2_periph(adc->base), ENABLE);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 	PWR_SDADCAnalogCmd(adc_pwr_periph(adc->base), ENABLE);
-	RCC_SDADCCLKConfig(RCC_SDADCCLK_SYSCLK_Div12);
+	if (sadc_clk_div)
+		RCC_SDADCCLKConfig(sadc_clk_div);
+	else
+		// default to max speed if not specified
+		RCC_SDADCCLKConfig(RCC_SDADCCLK_SYSCLK_Div12);
+
+	// int the dma if given
+	if (adc->dma)
+		dma_init(adc->dma);
 
 	// setup the different adc configurations
 	SDADC_VREFSelect(adc->ref);
@@ -74,7 +84,110 @@ static void adc_init(adc_t *adc)
 	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_EOCAL) == RESET)
 	{}
 
+	// option to allow adc's to be sync'ed 
+	///@todo if (adc->sync_adc1) {SDADC_InjectedSynchroSDADC1(adc->base)}
+	
 	adc->initalised = true;
+}
+
+
+static uint32_t __NULL;
+static void adc_dma_cfg(adc_t *adc, dma_request_t *dma_req, void *buf, int count)
+{
+	DMA_InitTypeDef *adc_cfg = &dma_req->st_dma_init;
+
+	///@todo if sync is on then Base needs to be JDATA12R || JDATA13R and word size = DMA_PeripheralDataSize_Word
+	adc_cfg->DMA_PeripheralBaseAddr = (uint32_t)&adc->base->JDATAR;
+	adc_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
+	adc_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
+
+	adc_cfg->DMA_MemoryBaseAddr = (uint32_t)buf;
+	adc_cfg->DMA_MemoryInc = DMA_MemoryInc_Enable;
+	if (buf == NULL)
+	{
+		// this NULL is a possible security hole as multiple io may read/write to
+		// this, it is only really for dbg and a real buffer should really be used
+		// at all times
+		adc_cfg->DMA_MemoryBaseAddr = (uint32_t)&__NULL;
+		adc_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
+	}
+	adc_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
+	adc_cfg->DMA_Mode = DMA_Mode_Normal;
+	adc_cfg->DMA_Priority = DMA_Priority_High;
+	adc_cfg->DMA_M2M = DMA_M2M_Disable;
+	adc_cfg->DMA_BufferSize = count; ///@todo if sync does this need to be * 2 ?
+	adc_cfg->DMA_DIR = DMA_DIR_PeripheralSRC;
+}
+
+
+static void adc_dma_complete(dma_request_t *req, void *param)
+{
+	adc_channel_t *ch = (adc_channel_t *)param;
+	adc_trace_complete_t cb;
+
+	// stop the DMA, and turn off continuous mode, we are done
+	SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
+	SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
+
+	cb = ch->complete;
+	if (cb)
+		cb(ch, ch->buf, ch->count, ch->complete_param);
+}
+
+
+void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_complete_t cb, void *param)
+{
+	adc_t *adc = ch->adc;
+	void *trigger = NULL;
+
+	// setup dma
+	if (adc->dma == NULL)
+		///@todo error current implementation does not support interrupts so we need a dma
+		return;
+	adc->dma_req.complete = adc_dma_complete;
+	ch->buf = dst;
+	ch->count = count;
+	ch->complete = cb;
+	ch->complete_param = param;
+	adc->dma_req.complete_param = ch;
+	adc->dma_req.dma = adc->dma;
+	adc_dma_cfg(adc, &adc->dma_req, (void *)dst, count);
+	SDADC_DMAConfig(adc->base, SDADC_DMATransfer_Injected, ENABLE);
+	dma_request(&adc->dma_req);
+
+	// use injected mode for all conversions so we can use a trigger if given
+	SDADC_InjectedChannelSelect(adc->base, ch->number);
+
+	// the following set-up(s) requires init mode 
+	SDADC_InitModeCmd(adc->base, ENABLE);
+	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+	{}
+
+	// setup the trigger that keeps the adc running count times, if no trigger is given
+	// we use continuous mode to trigger it count times
+	if (trigger)
+	{
+		/**@todo this section really **/
+		SDADC_InjectedContinuousModeCmd(adc->base, FALSE);
+		SDADC_ExternalTrigInjectedConvConfig(adc->base, /**@todo trigger->*/SDADC_ExternalTrigInjecConv_T19_CC4);
+		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_Rising);
+	}
+	else
+	{
+		// we have no trigger so use continuous mode with the dma, also set the
+		// fast bit since we are only doing 1 channel at a time (with the fast
+		// bit set we convert at SADC_CKL / 120, ie 
+		// SYS_CKL / (adc->sadc_clk_div * 120)
+		SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
+		SDADC_FastConversionCmd(adc->base, ENABLE);
+	}
+	
+	// close init mode
+	SDADC_InitModeCmd(adc->base, DISABLE);
+
+	// if we don't have a trigger start the adc manually
+	if (!trigger)
+		SDADC_SoftwareStartInjectedConv(adc->base);
 }
 
 
