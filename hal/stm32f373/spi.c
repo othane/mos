@@ -87,6 +87,7 @@ void spi_dma_cfg(int dir, SPI_TypeDef *channel, dma_request_t *dma_req, void *bu
 
 	spi_cfg->DMA_PeripheralBaseAddr = (uint32_t)&channel->DR;
 	spi_cfg->DMA_MemoryBaseAddr = (uint32_t)buf;
+	spi_cfg->DMA_MemoryInc = DMA_MemoryInc_Enable;
 	if (buf == NULL)
 	{
 		// this NULL is a possible security hole as multiple io may read/write to
@@ -96,7 +97,6 @@ void spi_dma_cfg(int dir, SPI_TypeDef *channel, dma_request_t *dma_req, void *bu
 		spi_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
 	}
 	spi_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	spi_cfg->DMA_MemoryInc = DMA_MemoryInc_Enable;
 	spi_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
 	spi_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 	spi_cfg->DMA_Mode = DMA_Mode_Normal;
