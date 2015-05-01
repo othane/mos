@@ -7,15 +7,16 @@ import os
 import StringIO
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import crc
+from argparse import *
 
-header_format = '<LLBLB'
+header_format = '<LLBLBLLH'
 global header_addr
 
 def ih2header(ih):
 	''' convert a intel hex file object to a mos program header '''
 	global header_addr
-	header_raw = struct.unpack(header_format, ih.gets(header_addr, 14))
-	header = namedtuple('header', 'crc len type isr_vector pid')
+	header_raw = struct.unpack(header_format, ih.gets(header_addr, 24))
+	header = namedtuple('header', 'crc len type isr_vector pid max_len key hw_id')
 	header = header._asdict(header._make(header_raw))
 	return header
 
@@ -26,20 +27,18 @@ def header2ih(ih, header):
 	ih.puts(header_addr, header_new)
 	return ih
 	
-def show_help():
-	print("Usage: %s [-h|<filename>]" % sys.argv[0])
-
 # check args
-if len(sys.argv) != 2:
-	show_help()
-	sys.exit(1)
-elif sys.argv[1] == '-h':
-	show_help()
-	sys.exit(0)
-elif not os.path.exists(sys.argv[1]):
-	sys.exit("Unable open %s" % sys.argv[1])
-filename = sys.argv[1]
-
+def auto_int(x):
+    return int(x,0)
+parser = ArgumentParser('add_header.py read a mos header, update it with given properties and length and checksum and write it back to stdout')
+parser.add_argument('-p', '--pid', type=auto_int, help='option to change the pid for this program')
+parser.add_argument('-k', '--key', type=auto_int, help='option to change the key for this program')
+parser.add_argument('--hw', type=auto_int, help='option to change the hardware id for this program')
+parser.add_argument('filename', nargs=1, help='mandatory hex file to read header data from')
+args = parser.parse_args()
+filename = args.filename[0]
+if not os.path.exists(filename):
+	sys.exit("Unable open %s" % filename)
 
 # open the full program (open via StringIO so we can write back to filename if desired)
 prog = IntelHex(StringIO.StringIO(open(filename, "r").read()))
@@ -48,9 +47,13 @@ header_addr = prog.minaddr() # all programs require there header to be located a
 # read out the header
 header = ih2header(prog)
 
-# debug
-import copy
-header_orig = copy.deepcopy(header)
+# optional updates
+if args.pid != None and args.pid >= 0 and args.pid < 256:
+	header['pid'] = args.pid
+if args.key != None:
+	header['key'] = args.key
+if args.hw != None:
+	header['hw_id'] = args.hw
 
 # update the header len
 l = prog.maxaddr() - prog.minaddr() + 1
