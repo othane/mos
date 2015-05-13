@@ -76,6 +76,15 @@ static void init_rcc(struct tmr_t *tmr)
 }
 
 
+static void tmr_sync_cfg(struct tmr_t *tmr)
+{
+	TIM_SelectMasterSlaveMode(tmr->tim, tmr->sync.master_slave);
+	TIM_SelectSlaveMode(tmr->tim, tmr->sync.slave_mode);
+	TIM_SelectOutputTrigger(tmr->tim, tmr->sync.output_trigger);
+	TIM_SelectInputTrigger(tmr->tim, tmr->sync.input_trigger);
+}
+
+
 void tmr_start(tmr_t *tmr)
 {
 	TIM_Cmd(tmr->tim, ENABLE);
@@ -91,6 +100,12 @@ void tmr_stop(tmr_t *tmr)
 int tmr_running(tmr_t *tmr)
 {
 	return (tmr->tim->CR1 & TIM_CR1_CEN? 1: 0);
+}
+
+
+void tmr_reset(tmr_t *tmr)
+{
+	tmr->tim->CNT = 0;
 }
 
 
@@ -152,5 +167,6 @@ void tmr_init(tmr_t *tmr)
 	// enable RCC for the tmr and setup the period and pre scaler
 	init_rcc(tmr);
 	tmr_set_freq(tmr, tmr->freq);
+	tmr_sync_cfg(tmr);
 }
 

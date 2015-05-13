@@ -15,6 +15,10 @@
 #define __HW__
 
 extern pwm_channel_t pwm0;
+extern pwm_channel_t pwm1;
+
+extern tmr_t tmr3;
+extern tmr_t tmr4;
 
 #endif
 
