@@ -20,13 +20,17 @@ void init(void)
 {
 	sys_init();
 	pwm_init(&pwm0);
+	pwm_init(&pwm1);
 }
 
 int main(void)
 {
 	init();
-	pwm_start(&pwm0);
 
+	pwm_start(&pwm1);
+	sys_spin(2); // adds a phase shift that should go away in SYNC mode
+	pwm_start(&pwm0);
+		
 	while (1)
 	{}
 
