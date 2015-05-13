@@ -32,7 +32,7 @@ gpio_pin_t pb6 = {
 
 tmr_t tmr3 = {
 	.tim = TIM3,
-	.freq = 200,
+	.freq = 20000,
 	#ifdef SYNC
 	.sync = {
 		// master
@@ -62,7 +62,7 @@ gpio_pin_t pb7 = {
 
 tmr_t tmr4 = {
 	.tim = TIM4,
-	.freq = 100,
+	.freq = 10000,
 	#ifdef SYNC
 	.sync = {
 		// slave
