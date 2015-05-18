@@ -48,7 +48,7 @@ static void sys_clk_init(void)
 	FLASH_PrefetchBufferCmd(ENABLE);
 
 	// Flash 1 wait state
-	FLASH_SetLatency(FLASH_Latency_1);
+	FLASH_SetLatency(FLASH_Latency_2);
 
 	// AHB prescaler set to div 1, HCLK = SYSCLK (72MHz)
 	RCC_HCLKConfig(RCC_SYSCLK_Div1);
