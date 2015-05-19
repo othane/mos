@@ -7,13 +7,27 @@ import os
 class scope():
 
     def __init__(self):
+        cmd = [
+            # start gdb and connect
+            "arm-none-eabi-gdb",
+            "-ex \"target remote localhost:3333\"",
+            "-ex \"set confirm off\"",
+            "-ex \"file ./adc_utest.elf\"",
+            "-ex \"mon reset halt\"",
+            "-ex \"tbreak main\"",
+            "-ex \"continue\"",
+
+            # quit
+            "-ex \"quit\"",
+        ]
+        subprocess.call(' '.join(cmd), shell=True)
         self.filename = 'adc_cache.bin'
         self.fs = 6e6 / 120
         self.ts = 1 / self.fs
         self.fig = figure()
         self.ax = self.fig.add_subplot(111)
         self.ax.set_xlim([0, 4096*self.ts])
-        self.ax.set_ylim([0, 65535])
+        self.ax.set_ylim([0, 70000])
         self.traces, = self.ax.plot([], [], '-b')
         self.anim = animation.FuncAnimation(self.fig, self.animate, interval=1e1, repeat=True, blit=True)
 
@@ -21,8 +35,12 @@ class scope():
         cmd = [
             # start gdb and connect
             "arm-none-eabi-gdb",
-            #"-x \"debug_adc_utest.gdbinit\"",
-            "-x \"run_adc_utest.gdbinit\"",
+            "-ex \"target remote localhost:3333\"",
+            "-ex \"set confirm off\"",
+            "-ex \"delete\"",
+            "-ex \"file ./adc_utest.elf\"",
+            "-ex \"tbreak adc_handle_buffer\"",
+            "-ex \"continue\"",
             # dump adc sample buffer to filename
             "-ex \"dump binary memory %s &buf[0] (&buf[%d])\"" % (self.filename, count),
             # quit
