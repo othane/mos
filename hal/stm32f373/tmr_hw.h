@@ -25,6 +25,7 @@ struct tmr_t
 	uint32_t freq;
 	uint32_t period;
 	TIM_TimeBaseInitTypeDef cfg;
+	uint8_t stop_on_halt;
 
 	struct
 	{
