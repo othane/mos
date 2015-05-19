@@ -123,11 +123,21 @@ static void adc_dma_cfg(adc_t *adc, dma_request_t *dma_req, void *buf, int count
 static void adc_dma_complete(dma_request_t *req, void *param)
 {
 	adc_channel_t *ch = (adc_channel_t *)param;
+	adc_t * adc = ch->adc;
 	adc_trace_complete_t cb;
 
 	// stop the DMA, and turn off continuous mode, we are done
 	SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
+
+	// stop continous mode
 	SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
+
+	// reset the trigger source
+	SDADC_InitModeCmd(adc->base, ENABLE);
+	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+	{}
+	SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+	SDADC_InitModeCmd(adc->base, DISABLE);
 
 	cb = ch->complete;
 	if (cb)
@@ -135,10 +145,9 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 }
 
 
-void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_complete_t cb, void *param)
+void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger, adc_trace_complete_t cb, void *param)
 {
 	adc_t *adc = ch->adc;
-	void *trigger = NULL;
 
 	// setup dma
 	if (adc->dma == NULL)
@@ -167,10 +176,9 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_co
 	// we use continuous mode to trigger it count times
 	if (trigger)
 	{
-		/**@todo this section really **/
-		SDADC_InjectedContinuousModeCmd(adc->base, FALSE);
-		SDADC_ExternalTrigInjectedConvConfig(adc->base, /**@todo trigger->*/SDADC_ExternalTrigInjecConv_T19_CC4);
-		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_Rising);
+		SDADC_InjectedContinuousModeCmd(adc->base, !adc->trigger.cont);
+		SDADC_ExternalTrigInjectedConvConfig(adc->base, adc->trigger.source);
+		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, adc->trigger.type);
 	}
 	else
 	{
@@ -179,8 +187,9 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_co
 		// bit set we convert at SADC_CKL / 120, ie 
 		// SYS_CKL / (adc->sadc_clk_div * 120)
 		SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
-		SDADC_FastConversionCmd(adc->base, ENABLE);
+		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
 	}
+	SDADC_FastConversionCmd(adc->base, ENABLE); // since we only support 1 ADC at a time we can just leave this on atm
 	
 	// close init mode
 	SDADC_InitModeCmd(adc->base, DISABLE);
