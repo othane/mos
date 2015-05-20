@@ -4,6 +4,7 @@ import matplotlib.animation as animation
 import subprocess
 import os
 
+N = 4096
 class scope():
 
     def __init__(self):
@@ -23,15 +24,15 @@ class scope():
         subprocess.call(' '.join(cmd), shell=True)
         self.filename = 'adc_cache.bin'
         self.fs = 6e6 / 120
-        self.ts = 1 / self.fs
+        self.ts = 1.0 / self.fs
         self.fig = figure()
         self.ax = self.fig.add_subplot(111)
-        self.ax.set_xlim([0, 4096*self.ts])
+        self.ax.set_xlim([0, N*self.ts])
         self.ax.set_ylim([0, 70000])
         self.traces, = self.ax.plot([], [], '-b')
         self.anim = animation.FuncAnimation(self.fig, self.animate, interval=1e1, repeat=True, blit=True)
 
-    def getADCSamples(self, count=4096, fmt="H"):
+    def getADCSamples(self, count=N, fmt="H"):
         cmd = [
             # start gdb and connect
             "arm-none-eabi-gdb",
@@ -54,7 +55,7 @@ class scope():
 
     def animate(self, n):
         samples = self.getADCSamples()
-        t = arange(0, (len(samples))*self.ts, self.ts)
+        t = arange(0, len(samples)) * self.ts
         self.traces.set_data(t, samples)
         self.fig.canvas.draw()
         return self.traces,
