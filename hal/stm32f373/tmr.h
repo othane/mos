@@ -44,6 +44,13 @@ int tmr_running(tmr_t *tmr);
 
 
 /**
+ * reset the timer count
+ * @param tmr the timer to reset
+ */
+void tmr_reset(tmr_t *tmr);
+
+
+/**
  * @brief change the tmr frequency
  * @param tmr the timer to change the frequency of
  * @param freq new frequency in hz

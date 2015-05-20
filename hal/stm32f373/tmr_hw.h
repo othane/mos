@@ -25,6 +25,15 @@ struct tmr_t
 	uint32_t freq;
 	uint32_t period;
 	TIM_TimeBaseInitTypeDef cfg;
+	uint8_t stop_on_halt;
+
+	struct
+	{
+		uint16_t master_slave; 		// see TIM_Master_Slave_Mode (sync timers)
+		uint16_t slave_mode;		// see TIM_Slave_Mode or 0 if not slave
+		uint16_t output_trigger;	// see TIM_Trigger_Output_Source
+		uint16_t input_trigger;		// see TIM_Internal_Trigger_Selection (table 45 in reference manual)
+	} sync;
 };
 
 #endif

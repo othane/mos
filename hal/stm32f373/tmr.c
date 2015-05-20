@@ -76,6 +76,71 @@ static void init_rcc(struct tmr_t *tmr)
 }
 
 
+static void dbg_stop(struct tmr_t *tmr)
+{
+	int state = tmr->stop_on_halt;
+	switch ((int)tmr->tim)
+	{
+		case (int)TIM2:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM2_STOP, state);
+			break;
+		case (int)TIM3:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM3_STOP, state);
+			break;
+		case (int)TIM4:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM4_STOP, state);
+			break;
+		case (int)TIM5:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM5_STOP, state);
+			break;
+		case (int)TIM6:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM6_STOP, state);
+			break;
+		case (int)TIM7:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM7_STOP, state);
+			break;
+		case (int)TIM12:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM12_STOP, state);
+			break;
+		case (int)TIM13:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM13_STOP, state);
+			break;
+		case (int)TIM14:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM14_STOP, state);
+			break;
+		case (int)TIM18:
+			DBGMCU_APB1PeriphConfig(DBGMCU_TIM18_STOP, state);
+			break;
+
+		case (int)TIM15:
+			DBGMCU_APB2PeriphConfig(DBGMCU_TIM15_STOP, state);
+			break;
+		case (int)TIM16:
+			DBGMCU_APB2PeriphConfig(DBGMCU_TIM16_STOP, state);
+			break;
+		case (int)TIM17:
+			DBGMCU_APB2PeriphConfig(DBGMCU_TIM17_STOP, state);
+			break;
+		case (int)TIM19:
+			DBGMCU_APB2PeriphConfig(DBGMCU_TIM19_STOP, state);
+			break;
+
+		default:
+			///@todo warn timer is not valid
+			break;
+	}
+}
+
+
+static void tmr_sync_cfg(struct tmr_t *tmr)
+{
+	TIM_SelectMasterSlaveMode(tmr->tim, tmr->sync.master_slave);
+	TIM_SelectSlaveMode(tmr->tim, tmr->sync.slave_mode);
+	TIM_SelectOutputTrigger(tmr->tim, tmr->sync.output_trigger);
+	TIM_SelectInputTrigger(tmr->tim, tmr->sync.input_trigger);
+}
+
+
 void tmr_start(tmr_t *tmr)
 {
 	TIM_Cmd(tmr->tim, ENABLE);
@@ -91,6 +156,12 @@ void tmr_stop(tmr_t *tmr)
 int tmr_running(tmr_t *tmr)
 {
 	return (tmr->tim->CR1 & TIM_CR1_CEN? 1: 0);
+}
+
+
+void tmr_reset(tmr_t *tmr)
+{
+	tmr->tim->CNT = 0;
 }
 
 
@@ -152,5 +223,7 @@ void tmr_init(tmr_t *tmr)
 	// enable RCC for the tmr and setup the period and pre scaler
 	init_rcc(tmr);
 	tmr_set_freq(tmr, tmr->freq);
+	tmr_sync_cfg(tmr);
+	dbg_stop(tmr);
 }
 

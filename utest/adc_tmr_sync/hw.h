@@ -7,18 +7,21 @@
  *
  * @author OT
  *
- * @date Apr 2015
+ * @date Jan 2013
  *
  */
 
 #ifndef __HW__
 #define __HW__
 
+extern adc_channel_t adc_chanA;
+extern adc_channel_t adc_chanB;
+extern adc_channel_t adc_chanC;
+extern adc_channel_t adc_chanD;
+
 extern pwm_channel_t pwm0;
 extern pwm_channel_t pwm1;
-
-extern tmr_t tmr3;
-extern tmr_t tmr4;
+extern pwm_channel_t pwm2;
 
 #endif
 
