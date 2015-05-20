@@ -179,6 +179,7 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 		SDADC_InjectedContinuousModeCmd(adc->base, !adc->trigger.cont);
 		SDADC_ExternalTrigInjectedConvConfig(adc->base, adc->trigger.source);
 		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, adc->trigger.type);
+		SDADC_FastConversionCmd(adc->base, ENABLE);
 	}
 	else
 	{
@@ -188,8 +189,8 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 		// SYS_CKL / (adc->sadc_clk_div * 120)
 		SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
 		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+		SDADC_FastConversionCmd(adc->base, ENABLE);
 	}
-	SDADC_FastConversionCmd(adc->base, ENABLE); // since we only support 1 ADC at a time we can just leave this on atm
 	
 	// close init mode
 	SDADC_InitModeCmd(adc->base, DISABLE);
