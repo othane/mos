@@ -31,7 +31,7 @@ struct adc_t
 	{
 		uint32_t type;		///< trigger type see SDADC_external_trigger_edge_for_injected_channels_conversion 
 		uint32_t source;	///< trigger source see SDADC_ExternalTrigger_sources
-		uint32_t cont;		///< 0 to trigger on first event and let it run, otherwise this requires a trigger for each sample (ie count triggers)
+		uint32_t cont;		///< 0 to trigger on first event and let it run, otherwise this requires a trigger for each sample [ie count triggers] (for some reason this only seems to work up till about 12KHz, not 16.66-50KHz as expected)
 	} trigger;
 
 	bool initalised;
