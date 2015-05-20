@@ -154,7 +154,7 @@ pwm_channel_t pwm1 = {
 	.tmr = &tmr3,
 	.pin = NULL,
 	.ch = TIM_Channel_1,
-	.duty = 0.0001,
+	.duty = 0.01,
 	.oc_cfg = { .TIM_OCMode = TIM_OCMode_PWM1, .TIM_OutputState = TIM_OutputState_Enable,
 				.TIM_OCPolarity = TIM_OCPolarity_High}
 };

@@ -44,10 +44,12 @@ void adc_complete(adc_channel_t *ch, volatile int16_t *dst, int len, void *param
 {
 	int n;
 	
-	//pwm_stop(&pwm2);
-	//pwm_stop(&pwm0);
-	//pwm_reset(&pwm2);
-	//pwm_reset(&pwm0);
+	#ifdef PWM_START_STOP
+	pwm_stop(&pwm2);
+	pwm_stop(&pwm0);
+	pwm_reset(&pwm2);
+	pwm_reset(&pwm0);
+	#endif
 
 	for (n=0; n < len; n++)
 		buf[n] += 32767;
@@ -56,8 +58,11 @@ void adc_complete(adc_channel_t *ch, volatile int16_t *dst, int len, void *param
 
 	vmemset(buf, 0x00, sizeof(buf));
 	adc_trace(ch, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 1, adc_complete, param);
-	//pwm_start(&pwm2);
-	//pwm_start(&pwm0);
+
+	#ifdef PWM_START_STOP
+	pwm_start(&pwm2);
+	pwm_start(&pwm0);
+	#endif
 }
 
 int main(void)
