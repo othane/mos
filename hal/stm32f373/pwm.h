@@ -20,7 +20,7 @@ typedef struct pwm_channel_t pwm_channel_t;
 
 
 /**
- * @brief start the pwm on a given channel
+ * @brief start the pwm (starts the whole timer)
  * @param pwm the pwm channel to start
  *
  */
@@ -28,11 +28,19 @@ void pwm_start(pwm_channel_t *pwm);
 
 
 /**
- * @brief stop the pwm on a given channel
+ * @brief stop the pwm (stops the whole timer)
  * @param pwm the pwm channel to stop
  *
  */
 void pwm_stop(pwm_channel_t *pwm);
+
+
+/**
+ * @brief reset the pwm (resets the whole timer)
+ * @param pwm the pwm channel to stop
+ *
+ */
+void pwm_reset(pwm_channel_t *pwm);
 
 
 /**

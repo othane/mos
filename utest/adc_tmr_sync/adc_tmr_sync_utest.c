@@ -16,7 +16,6 @@
 
 adc_channel_t *chan = &adc_chanC;
 volatile uint16_t buf[4096];
-volatile uint32_t val = 0;
 
 volatile void *vmemset(volatile void *s, int8_t c, size_t n)
 {
@@ -29,6 +28,9 @@ volatile void *vmemset(volatile void *s, int8_t c, size_t n)
 void init(void)
 {
 	sys_init();
+	pwm_init(&pwm0);
+	pwm_init(&pwm1);
+	pwm_init(&pwm2);
 	adc_channel_init(chan);
 	vmemset(buf, 0x00, sizeof(buf));
 }
@@ -41,22 +43,38 @@ void adc_handle_buffer(volatile uint16_t *dst, int len)
 void adc_complete(adc_channel_t *ch, volatile int16_t *dst, int len, void *param)
 {
 	int n;
+	
+	#ifdef PWM_START_STOP
+	pwm_stop(&pwm2);
+	pwm_stop(&pwm0);
+	pwm_reset(&pwm2);
+	pwm_reset(&pwm0);
+	#endif
+
 	for (n=0; n < len; n++)
 		buf[n] += 32767;
 
-	val = adc_read(ch);
 	adc_handle_buffer((volatile uint16_t *)dst, len);
 
 	vmemset(buf, 0x00, sizeof(buf));
-	adc_trace(ch, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, param);
+	adc_trace(ch, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 1, adc_complete, param);
+
+	#ifdef PWM_START_STOP
+	pwm_start(&pwm2);
+	pwm_start(&pwm0);
+	#endif
 }
 
 int main(void)
 {
 	init();
 
-	val = adc_read(chan);
-	adc_trace(chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, NULL);
+	adc_trace(chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 1, adc_complete, NULL);
+	pwm_start(&pwm2);
+	sys_spin(100);
+	pwm_start(&pwm1);
+	pwm_start(&pwm0);
+
 	while (1)
 	{}
 

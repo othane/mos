@@ -35,7 +35,7 @@
 #include "bootstrap.h"
 
 #ifndef NOHW_H
-#include <hw.h>     ///< this can be the default in the hal/stmf107x dir or your own for a custom system
+#include <hw.h> 
 #endif
 
 

@@ -53,6 +53,12 @@ void pwm_stop(pwm_channel_t *pwm)
 }
 
 
+void pwm_reset(pwm_channel_t *pwm)
+{
+	tmr_reset(pwm->tmr);
+}
+
+
 void pwm_set_duty(pwm_channel_t *pwm, float duty)
 {
 	struct tmr_t *tmr = pwm->tmr;

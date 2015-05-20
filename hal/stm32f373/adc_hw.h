@@ -22,11 +22,17 @@
 typedef struct adc_t adc_t;
 struct adc_t
 {
-	SDADC_TypeDef *base;
+	SDADC_TypeDef *base;	///< which adc to use
 	uint32_t ref;
 	SDADC_AINStructTypeDef SDADC_AINStructure[3];
 	uint32_t sadc_clk_div;
-	dma_t *dma;
+	dma_t *dma;				///< link to dma, trace requires dma for this module
+	struct
+	{
+		uint32_t type;		///< trigger type see SDADC_external_trigger_edge_for_injected_channels_conversion 
+		uint32_t source;	///< trigger source see SDADC_ExternalTrigger_sources
+		uint32_t cont;		///< 0 to trigger on first event and let it run, otherwise this requires a trigger for each sample [ie count triggers] (for some reason this only seems to work up till about 12KHz, not 16.66-50KHz as expected)
+	} trigger;
 
 	bool initalised;
 	dma_request_t dma_req;

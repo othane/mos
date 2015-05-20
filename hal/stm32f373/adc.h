@@ -24,9 +24,12 @@ typedef struct adc_channel_t adc_channel_t;
  * @param ch channel to read from
  * @param dst buffer to store adc vales
  * @param count number of conversions to do (caller must ensure buf is large enough)
+ * @param trigger 0 start now, 1 honour any trigger setup in hw.c
+ * @param cb call this once count samples have been read into dst
+ * @param param pass this to cb on completion
  */
 typedef void (*adc_trace_complete_t)(adc_channel_t *ch, volatile int16_t *dst, int count, void *param);
-void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, adc_trace_complete_t cb, void *param);
+void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger, adc_trace_complete_t cb, void *param);
 
 
 /**
