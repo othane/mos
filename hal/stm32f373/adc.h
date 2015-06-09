@@ -40,6 +40,14 @@ int32_t adc_read(adc_channel_t *ch);
 
 
 /**
+ * @brief change the ADC gain on the fly
+ * @param ch channel config to change
+ * @param gain the gain to set ie x1, x2, etc it will do its best
+ */
+void adc_set_gain(adc_channel_t *channel, uint8_t gain);
+
+
+/**
  * @brief init this adc channel so it is ready for reads
  * @param ch channel to init
  */
