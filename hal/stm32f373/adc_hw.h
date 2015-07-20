@@ -45,7 +45,8 @@ struct adc_channel_t
 	adc_t *adc;
 	uint32_t number;
 	uint32_t conf;
-	gpio_pin_t *pin;
+	gpio_pin_t *pin;		// input pin
+	gpio_pin_t *pin_ref;	// in differential mode use this pin as the - and pin as the +, else NULL
 	
 	adc_trace_complete_t complete;
 	void *complete_param;

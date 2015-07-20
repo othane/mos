@@ -9,9 +9,10 @@ export LD = $(CROSS_COMPILE)ld
 export OD   = $(CROSS_COMPILE)objdump
 export BIN  = $(CROSS_COMPILE)objcopy -O ihex
 export SIZE = $(CROSS_COMPILE)size
+export GDB = $(CROSS_COMPILE)gdb
 
 MCU = cortex-m4
-FPU = -mfloat-abi=hard -mfpu=fpv4-sp-d16 -D__FPU_USED=1
+FPU = -mfloat-abi=hard -mfpu=fpv4-sp-d16 -D__FPU_USED=1 -D__FPU_PRESENT=1 -DARM_MATH_CM4
 DEFS = -DUSE_STDPERIPH_DRIVER -DSTM32F37X -DRUN_FROM_FLASH=1 -DHSE_VALUE=8000000
 OPT ?= -O0 
 MCFLAGS = -mthumb -mcpu=$(MCU) $(FPU)

@@ -220,6 +220,46 @@ int32_t adc_read(adc_channel_t *channel)
 }
 
 
+#define ABS(x) ((x < 0)? -(x): (x))
+void adc_set_gain(adc_channel_t *channel, uint8_t gain)
+{
+	struct adc_t *adc = channel->adc;
+	struct {
+		int g;
+		uint32_t regval;
+	} gains[] = {
+		{.g = 1, .regval = SDADC_Gain_1},
+		{.g = 2, .regval = SDADC_Gain_2},
+		{.g = 4, .regval = SDADC_Gain_4},
+		{.g = 8, .regval = SDADC_Gain_8},
+		{.g = 16, .regval = SDADC_Gain_16},
+		{.g = 32, .regval = SDADC_Gain_32},
+	};
+	int min_err = 1000, min_err_idx = 0, n;
+
+	// select the nearest gain
+	for (n = 0; n < 6; n++)
+	{
+		int err = ABS(gains[n].g - (int)gain);
+		if (err < min_err)
+		{
+			min_err_idx = n;
+			min_err = err;
+		}
+	}
+	///@todo maybe we could add a post adc software gain to make this exact
+	adc->SDADC_AINStructure[channel->conf].SDADC_Gain = gains[min_err_idx].regval;
+	
+	
+	// update the SDADC_AINStructure gain
+	SDADC_InitModeCmd(adc->base, ENABLE);
+	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+	{}
+	SDADC_AINInit(adc->base, channel->conf, &adc->SDADC_AINStructure[channel->conf]);
+	SDADC_InitModeCmd(adc->base, DISABLE);
+}
+
+
 void adc_channel_init(adc_channel_t *channel)
 {
 	// if the adc is not initialised yet init that
@@ -229,6 +269,7 @@ void adc_channel_init(adc_channel_t *channel)
 	
 	// set analog input pin
 	gpio_init_pin(channel->pin);
+	gpio_init_pin(channel->pin_ref);
 
 	// link this channel to its config
 	SDADC_ChannelConfig(adc->base, channel->number, channel->conf);
