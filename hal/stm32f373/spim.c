@@ -185,7 +185,7 @@ void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int
 	spi_flush_tx_fifo(spim->channel, &spim->st_spi_init);
 
 	// init the read
-	if (len <= 4 || spim->rx_dma == NULL)
+	if (len == 1 || spim->rx_dma == NULL)
 	{
 		SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_RXNE, ENABLE);
 	}
@@ -202,7 +202,7 @@ void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int
 	// init the write
 	SPI_Cmd(spim->channel, ENABLE);
 	set_addr(spim, spim->addr);
-	if (len < 4 || spim->tx_dma == NULL)
+	if (len == 1 || spim->tx_dma == NULL)
 	{
 		// just write 1 byte, let the isr take over the rest
 		spim_write_phase(spim);
