@@ -83,6 +83,7 @@ static void adc_init(adc_t *adc)
 	SDADC_StartCalibration(adc->base);
 	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_EOCAL) == RESET)
 	{}
+	SDADC_ClearFlag(adc->base, SDADC_FLAG_EOCAL);
 
 	// option to allow adc's to be sync'ed 
 	///@todo if (adc->sync_adc1) {SDADC_InjectedSynchroSDADC1(adc->base)}
@@ -126,6 +127,8 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 	adc_t * adc = ch->adc;
 	adc_trace_complete_t cb;
 
+	sys_enter_critical_section();
+
 	// stop the DMA, and turn off continuous mode, we are done
 	SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
 
@@ -139,6 +142,12 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 	SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
 	SDADC_InitModeCmd(adc->base, DISABLE);
 
+	///@todo handle any overruns (we should really handle this in a isr
+	/// but for now we can just clear the flag and hope the dma still completes)
+	SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
+	
+	sys_leave_critical_section();
+
 	cb = ch->complete;
 	if (cb)
 		cb(ch, ch->buf, ch->count, ch->complete_param);
@@ -148,8 +157,10 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger, adc_trace_complete_t cb, void *param)
 {
 	adc_t *adc = ch->adc;
+	uint32_t num;
 
 	// setup dma
+	sys_enter_critical_section();
 	if (adc->dma == NULL)
 		///@todo error current implementation does not support interrupts so we need a dma
 		return;
@@ -166,6 +177,7 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 
 	// use injected mode for all conversions so we can use a trigger if given
 	SDADC_InjectedChannelSelect(adc->base, ch->number);
+	SDADC_GetInjectedConversionValue(adc->base, &num); // clear JEOCF flag to ensure dma will be triggered (it needs an edge !)
 
 	// the following set-up(s) requires init mode 
 	SDADC_InitModeCmd(adc->base, ENABLE);
@@ -194,6 +206,7 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 	
 	// close init mode
 	SDADC_InitModeCmd(adc->base, DISABLE);
+	sys_leave_critical_section();
 
 	// if we don't have a trigger start the adc manually
 	if (!trigger)
