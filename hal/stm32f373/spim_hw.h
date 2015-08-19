@@ -26,7 +26,6 @@ struct spim_xfer_opts
 struct spim_t
 {
 	SPI_TypeDef *channel;
-	//SPI_InitTypeDef st_spi_init;					///< details of how the spim should run (not all options are supported yet)
 	uint16_t idle_address;							///< address to select when the bus is idle
 
 	// device pins

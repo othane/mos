@@ -196,7 +196,7 @@ success:
 	sys_enter_critical_section();
 
 	if (spim->read_buf != NULL || spim->read_count != 0 ||
-	    spim->write_buf != NULL || spim->write_count != 0)
+		spim->write_buf != NULL || spim->write_count != 0)
 		///@todo xfer in progress already
 		goto done;
 
@@ -213,8 +213,6 @@ success:
 	// flush the buffers so the xfer begins a new
 	spi_flush_rx_fifo(spim->channel);
 	spi_flush_tx_fifo(spim->channel, &opts->st_opts);
-
-	// init the spi setup for this transfer
 
 	// init the read
 	if (len == 1 || spim->rx_dma == NULL)
