@@ -44,6 +44,22 @@ void spi_clk_init(SPI_TypeDef *channel)
 }
 
 
+float spi_get_clk_speed(SPI_TypeDef *channel)
+{
+	switch ((uint32_t)channel)
+	{
+		case (uint32_t)SPI1:
+			// on apb2 bus so full speed
+			return sys_clk_freq();
+		case (uint32_t)SPI2:
+		case (uint32_t)SPI3:
+		default:
+			// on apb1 bus so 1/2 speed
+			return sys_clk_freq() / 2.0;
+	}
+}
+
+
 void spi_init_regs(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init_in)
 {
 	// init the spi itself
