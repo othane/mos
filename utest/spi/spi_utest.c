@@ -81,7 +81,7 @@ int main(void)
 	init();
 	spis_write(&spis_dev, spis_write_buf, WRITE_BUF_LEN, spis_writecomplete, NULL);
 	spis_read(&spis_dev, spis_read_buf, READ_BUF_LEN, spis_readcomplete, NULL);
-	spim_xfer(&spim_dev, 0x01, spim_read_buf, spim_write_buf, SPIM_LEN, spim_complete, NULL);
+	spim_xfer(&spim_dev, &spim_dev_opts, 0x01, spim_read_buf, spim_write_buf, SPIM_LEN, spim_complete, NULL);
 
 	// do nothing
 	while (1)
@@ -90,7 +90,7 @@ int main(void)
 		{
 			again = 0;
 			sys_spin(20);
-			spim_xfer(&spim_dev, 0x01, spim_read_buf, spim_write_buf, SPIM_LEN, spim_complete, NULL);
+			spim_xfer(&spim_dev, &spim_dev_opts, 0x01, spim_read_buf, spim_write_buf, SPIM_LEN, spim_complete, NULL);
 		}
 	}
 

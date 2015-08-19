@@ -16,16 +16,21 @@
 #include "hal.h"
 #include "dma_hw.h"
 
+struct spim_xfer_opts
+{
+	uint32_t speed; 			///< go equal to or slower than this, or if 0 use st_opts.SPI_BaudRatePrescaler
+	SPI_InitTypeDef st_opts; 	///< spi setup for a particular transaction
+};
 
 // internal representation of a master spi device
 struct spim_t
 {
 	SPI_TypeDef *channel;
-	SPI_InitTypeDef st_spi_init;					///< details of how the spim should run (not all options are supported yet)
+	//SPI_InitTypeDef st_spi_init;					///< details of how the spim should run (not all options are supported yet)
 	uint16_t idle_address;							///< address to select when the bus is idle
 
 	// device pins
-	gpio_pin_t **nss;								///< null terminated array of address pin where the first item is the LSB and the last is the MSB in the address
+	gpio_pin_t **nss;								///< null terminated array of address pin where the first item is the LSB and the last is the MSB in the address .. to use HW controlled NSS set st_opts.SPI_NSS = SPI_NSS_Hard and this to NULL
 	gpio_pin_t *sck, *miso, *mosi;					///< other standard spi lines
 
 	// transfer

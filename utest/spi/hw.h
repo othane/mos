@@ -22,6 +22,7 @@ extern spis_t spis_dev;
 /**
  * master spi device available oh this hw
  */
+extern spim_xfer_opts spim_dev_opts;
 extern spim_t spim_dev;
 
 #endif

@@ -24,6 +24,8 @@ void spi_gpio_init(gpio_pin_t *nss, gpio_pin_t *sck, gpio_pin_t *miso, gpio_pin_
 
 void spi_clk_init(SPI_TypeDef *channel);
 
+float spi_get_clk_speed(SPI_TypeDef *channel);
+
 void spi_init_regs(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init_in);
 
 void spi_flush_tx_fifo(SPI_TypeDef *channel, SPI_InitTypeDef *st_spi_init);

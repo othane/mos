@@ -160,8 +160,38 @@ void spim_rx_dma_complete(dma_request_t *req, void *param)
 }
 
 
-void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
+static const struct prescalers_t {
+	uint16_t scale;
+	uint16_t reg;
+} prescalers[] = {
+	{.scale = 2, .reg = SPI_BaudRatePrescaler_2},
+	{.scale = 4, .reg = SPI_BaudRatePrescaler_4},
+	{.scale = 8, .reg = SPI_BaudRatePrescaler_8},
+	{.scale = 16, .reg = SPI_BaudRatePrescaler_16},
+	{.scale = 32, .reg = SPI_BaudRatePrescaler_32},
+	{.scale = 64, .reg = SPI_BaudRatePrescaler_64},
+	{.scale = 128, .reg = SPI_BaudRatePrescaler_128},
+	{.scale = 256, .reg = SPI_BaudRatePrescaler_256},
+};
+
+void spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
 {
+	float fclk = spi_get_clk_speed(spim->channel);
+	int k;
+
+	// update speed from opts if needed (do this outside critical section)
+	if (opts->speed)
+	{
+		for (k = 0; k < sizeof(prescalers)/sizeof(struct prescalers_t); k++)
+		{
+			if ((fclk / prescalers[k].scale) <= opts->speed)
+				goto success;
+		}
+		k--; // no solution so just use slowest possible speed
+success:
+		opts->st_opts.SPI_BaudRatePrescaler = prescalers[k].reg;
+		opts->speed = 0; // done, we don't need to wast time calculating this again
+	}
 
 	sys_enter_critical_section();
 
@@ -182,7 +212,9 @@ void spim_xfer(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, int
 
 	// flush the buffers so the xfer begins a new
 	spi_flush_rx_fifo(spim->channel);
-	spi_flush_tx_fifo(spim->channel, &spim->st_spi_init);
+	spi_flush_tx_fifo(spim->channel, &opts->st_opts);
+
+	// init the spi setup for this transfer
 
 	// init the read
 	if (len == 1 || spim->rx_dma == NULL)
@@ -252,9 +284,6 @@ void spim_init(spim_t *spim)
 		dma_init(spim->rx_dma);
 	if (spim->tx_dma)
 		dma_init(spim->tx_dma);
-
-	// set up all the spi settings, isr's, etc and start the spi
-	spi_init_regs(spim->channel, &spim->st_spi_init);
 }
 
 
