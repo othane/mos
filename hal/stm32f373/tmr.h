@@ -61,6 +61,17 @@ uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq);
 
 
 /**
+ * @brief add callback to run for each channel when this timer changes its frequency
+ * @param tmr timer to connect the callback
+ * @param cb callback function
+ * @param channel indicates which channel on the timer this is called for
+ * @param param callback parameter
+ */
+typedef void (*freq_update_cb_t)(tmr_t *tmr, int ch, void *param); // internal callback for pwm/ppm modules etc
+void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *param); // internal function only
+
+
+/**
  * @brief get the tick count of the timer
  * @param tmr the timer to get the tick count of
  * @return the tick count of the timer

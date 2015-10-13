@@ -34,6 +34,9 @@ struct tmr_t
 		uint16_t output_trigger;	// see TIM_Trigger_Output_Source
 		uint16_t input_trigger;		// see TIM_Internal_Trigger_Selection (table 45 in reference manual)
 	} sync;
+
+	freq_update_cb_t freq_update_cb[4];
+	void *freq_update_cb_param[4];
 };
 
 #endif

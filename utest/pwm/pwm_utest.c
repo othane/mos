@@ -21,6 +21,8 @@ void init(void)
 	sys_init();
 	pwm_init(&pwm0);
 	pwm_init(&pwm1);
+	pwm_init(&pwm2);
+	pwm_init(&pwm3);
 }
 
 int main(void)
@@ -30,6 +32,8 @@ int main(void)
 	pwm_start(&pwm1);
 	sys_spin(2); // adds a phase shift that should go away in SYNC mode
 	pwm_start(&pwm0);
+	pwm_start(&pwm3);
+	pwm_set_freq(&pwm3, 50000); // test overriding hw.c freq and ensure pwm2 updates duty too
 		
 	while (1)
 	{}

@@ -16,6 +16,8 @@
 
 extern pwm_channel_t pwm0;
 extern pwm_channel_t pwm1;
+extern pwm_channel_t pwm2;
+extern pwm_channel_t pwm3;
 
 extern tmr_t tmr3;
 extern tmr_t tmr4;
