@@ -27,10 +27,12 @@ void init(void)
 int main(void)
 {
 	float phs = 0;
+
 	init();
 	ppm_start(&ppm_ref);
 	ppm_start(&ppm_drift);
 
+	ppm_set_freq(&ppm_drift, 10000); // test overriding hw.c freq and ensure ch2 updates phs too
 	while (1)
 	{
 		ppm_set_phs(&ppm_drift, phs);

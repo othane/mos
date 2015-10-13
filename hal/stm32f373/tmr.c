@@ -165,10 +165,54 @@ void tmr_reset(tmr_t *tmr)
 }
 
 
+static uint8_t tmr_ch2n(int ch)
+{
+	switch (ch)
+	{
+		case TIM_Channel_1:
+			return 0;
+		case TIM_Channel_2:
+			return 1;
+		case TIM_Channel_3:
+			return 2;
+		case TIM_Channel_4:
+			return 3;
+		default:
+			return 0;	// error, this should not happen !!
+	}
+}
+
+
+static uint8_t tmr_n2ch(int n)
+{
+	switch (n)
+	{
+		case 0:
+			return TIM_Channel_1;
+		case 1:
+			return TIM_Channel_2;
+		case 2:
+			return TIM_Channel_3;
+		case 3:
+			return TIM_Channel_4;
+		default:
+			return TIM_Channel_1;	// error, this should not happen !!
+	}
+}
+
+
+void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *param)
+{
+	tmr->freq_update_cb_param[tmr_ch2n(channel)] = param;
+	tmr->freq_update_cb[tmr_ch2n(channel)] = cb;
+}
+
+
 uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq)
 {
 	uint32_t tmr_freq = sys_clk_freq();
 	uint32_t period, prescaler;
+	uint8_t k;
 
 	// find the highest period value using the smallest pre-scaler (ie best resolution)
 	for (prescaler = 1; prescaler <= UINT16_MAX; prescaler++)
@@ -207,6 +251,12 @@ done:
 		tmr->period = period;
 	}
 
+	// run this callback so other modules building on this know to
+	// update their duty cycles etc
+	for (k=0; k<4; k++)
+		if (tmr->freq_update_cb[k])
+			tmr->freq_update_cb[k](tmr, tmr_n2ch(k), tmr->freq_update_cb_param[k]);
+
 	// return the actual frequency used
 	return tmr_freq / (period * prescaler);
 }
@@ -216,7 +266,6 @@ uint32_t tmr_get_tick(tmr_t *tmr)
 {
 	return TIM_GetCounter(tmr->tim);
 }
-
 
 void tmr_init(tmr_t *tmr)
 {

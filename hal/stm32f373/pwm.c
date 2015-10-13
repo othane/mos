@@ -115,8 +115,17 @@ void pwm_set_duty(pwm_channel_t *pwm, float duty)
 uint32_t pwm_set_freq(pwm_channel_t *pwm, uint32_t freq)
 {
 	freq = tmr_set_freq(pwm->tmr, freq);
-	pwm_set_duty(pwm, pwm->duty);
+	// note the duty will be updated from the pwm_update_duty_on_freq_change below by the tmr
 	return freq;
+}
+
+
+static void pwm_update_duty_on_freq_change(tmr_t *tmr, int ch, void *param)
+{
+	pwm_channel_t *pwm = (pwm_channel_t *)param;
+
+	// update this channels duty for the new timer freq
+	pwm_set_duty(pwm, pwm->duty);
 }
 
 
@@ -125,10 +134,8 @@ void pwm_init(pwm_channel_t *pwm)
 	// init the gpio in AF mode
 	gpio_init_pin(pwm->pin);
 
-	// init pwm parent timer module (sets freq)
+	// init pwm parent timer module (sets freq and duty via pwm_update_duty_on_freq_change cb)
+	tmr_set_freq_update_cb(pwm->tmr, pwm_update_duty_on_freq_change, pwm->ch, pwm);
 	tmr_init(pwm->tmr);
-	
-	// set the duty cycle
-	pwm_set_duty(pwm, pwm->duty);
 }
 

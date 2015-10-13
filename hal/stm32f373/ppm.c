@@ -104,27 +104,33 @@ void ppm_set_phs(ppm_channel_t *ppm, float phs)
 	}
 }
 
+
 uint32_t ppm_set_freq(ppm_channel_t *ppm, uint32_t freq)
 {
 	// for toggle to work for ppm we need the timer run twice as fast
 	// see https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder=https%3a%2f%2fmy.st.com%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex_mx_stm32%2fPWM%20same%20Dutycycle%2c%20different%20starttime%20%28Phaseshift%29&FolderCTID=0x01200200770978C69A1141439FE559EB459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=1594
 	freq = tmr_set_freq(ppm->tmr, 2*freq);
-	ppm_set_phs(ppm, ppm->phs);
+	// note the phase will be updated from the ppm_update_phs_on_freq_change below by the tmr
 	return freq / 2;
 }
 
+static void ppm_update_phs_on_freq_change(tmr_t *tmr, int ch, void *param)
+{
+	ppm_channel_t *ppm = (ppm_channel_t *)param;
+
+	// update this channels phase for the new timer freq
+	ppm_set_phs(ppm, ppm->phs);
+}
 
 void ppm_init(ppm_channel_t *ppm)
 {
 	// init the gpio in AF mode
 	gpio_init_pin(ppm->pin);
 
-	// init ppm parent timer module (sets freq)
+	// init ppm parent timer module (sets freq and phs via ppm_update_phs_on_freq_change cb)
+	tmr_set_freq_update_cb(ppm->tmr, ppm_update_phs_on_freq_change, ppm->ch, ppm);
 	ppm->tmr->freq = ppm->freq * 2; // double frequency since we use toggle magic to make this work which needs freq*2 to the timer
 	tmr_init(ppm->tmr);
-	
-	// set the duty cycle
-	ppm_set_phs(ppm, ppm->phs);
 }
 
 
