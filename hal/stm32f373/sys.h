@@ -15,6 +15,8 @@
 
 #define SYS STM32f107
 
+typedef void (*SysTick_Extra_Handler_f)(void);
+
 
 /**
  * @brief simple set of system wide error codes
@@ -124,6 +126,12 @@ void sys_spin(uint32_t time);
  * @note call this first thing on start-up
  */
 void sys_init(void);
+
+/**
+ * @brief Initializes addition handler to be called on each tick interrupt
+ * @note make sure that you call this after the init process has finished
+ */
+void sys_set_systick_handler(SysTick_Extra_Handler_f handler);
 
 #endif
 

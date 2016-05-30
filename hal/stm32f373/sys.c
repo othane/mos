@@ -158,10 +158,18 @@ static void sys_tick_init()
 }
 
 
+static SysTick_Extra_Handler_f extra_handler= NULL;
+static uint16_t reentrant_flag = 0;;
+
 // sys tick ISR (overrides weak functions from st libs)
 void SysTick_Handler(void)
 {
 	sys.ticks++;
+
+	if(extra_handler!=NULL )
+	{
+		extra_handler();
+	}
 }
 
 
@@ -310,6 +318,11 @@ void sys_init(void)
 	sys_log_init();
 }
 
+//setup extra SysTick handler exected after the main handler
+void sys_set_systick_handler(SysTick_Extra_Handler_f handler)
+{
+	extra_handler = handler;
+}
 
 #ifdef USE_FULL_ASSERT
 /**
