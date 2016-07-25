@@ -31,6 +31,7 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_sdadc.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_tim.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_dbgmcu.c \
+	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_dac.c \
 	./syscalls.c \
 	./nvm.c \
 	./crc.c \
