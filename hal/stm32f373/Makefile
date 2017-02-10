@@ -31,6 +31,7 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_sdadc.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_tim.c \
 	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_dbgmcu.c \
+	./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/STM32F37x_StdPeriph_Driver/src/stm32f37x_usart.c \
 	./syscalls.c \
 	./nvm.c \
 	./crc.c \
@@ -48,6 +49,7 @@ SRC-$(CONFIG_SPIM) += ./spim.c
 SRC-$(CONFIG_ADC) += ./adc.c ./dma.c
 SRC-$(CONFIG_PWM) += ./pwm.c ./tmr.c
 SRC-$(CONFIG_PPM) += ./ppm.c ./tmr.c
+SRC-$(CONFIG_UART) += ./uart.c
 
 ASRC = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/Source/Templates/gcc_ride7/startup_stm32f37x.s
 
