@@ -24,6 +24,7 @@
 #include "sys.h"
 #include "dma.h"
 #include "gpio.h"
+#include "uart.h"
 #include "spis.h"
 #include "spim.h"
 #include "nvm.h"
