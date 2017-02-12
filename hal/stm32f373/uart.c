@@ -161,7 +161,7 @@ static void uart_irq_handler(uart_t *uart)
 		// note I am getting spurious RTO interrupts with read_count == 0 when
 		// the next read starts that I cannot get rid of, maybe a bug in the
 		// stm, so I gaurd against it here by checking the read_count > 0)
-		if (uart->read_count > 0)
+		if (uart->rx_dma || uart->read_count > 0)
 		{
 			read_count = uart->read_count;
 			read_complete_cb = uart->read_complete_cb;
