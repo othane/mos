@@ -31,11 +31,34 @@ int _read(int file, char *ptr, int len)
 {
 	return 0;
 }
- 
+
+#ifdef USE_HEAP
+caddr_t _sbrk(int incr)
+{
+	// bare bones heap allocator
+	static unsigned char *heap_end = 0;
+	unsigned char *prev_heap_end;
+	extern unsigned char _heap_low; // defined by the linker
+	extern unsigned char _heap_top; // "
+
+	// initialize
+	if(heap_end == 0)
+		heap_end = &_heap_low;
+
+	prev_heap_end = heap_end;
+	if(heap_end + incr > &_heap_top)
+		// heap overflow (not good!)
+		return NULL;
+	heap_end += incr;
+
+	return (caddr_t) prev_heap_end;
+}
+#else
 caddr_t _sbrk(int incr)
 {
 	return (caddr_t)0;
 }
+#endif
  
 int _write(int file, char *ptr, int len)
 {
