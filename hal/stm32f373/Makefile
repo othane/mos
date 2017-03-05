@@ -47,6 +47,7 @@ SRC-$(CONFIG_GPIO) += ./gpio.c
 SRC-$(CONFIG_SPIS) += ./spis.c
 SRC-$(CONFIG_SPIM) += ./spim.c
 SRC-$(CONFIG_ADC) += ./adc.c ./dma.c
+SRC-$(CONFIG_TMR) += ./tmr.c
 SRC-$(CONFIG_PWM) += ./pwm.c ./tmr.c
 SRC-$(CONFIG_PPM) += ./ppm.c ./tmr.c
 SRC-$(CONFIG_UART) += ./uart.c
