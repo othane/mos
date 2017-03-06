@@ -37,6 +37,9 @@ struct tmr_t
 
 	freq_update_cb_t freq_update_cb[4];
 	void *freq_update_cb_param[4];
+
+	tmr_update_cb_t update_cb;
+	void *update_cb_param;
 };
 
 #endif

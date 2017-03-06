@@ -72,6 +72,16 @@ void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *
 
 
 /**
+ * @brief add callback to run when the timer update event occurs
+ * @param tmr timer to connect the callback
+ * @param cb callback function
+ * @param param callback parameter
+ */
+typedef void (*tmr_update_cb_t)(tmr_t *tmr, void *param);
+void tmr_set_update_cb(tmr_t *tmr, tmr_update_cb_t cb, void *param);
+
+
+/**
  * @brief get the tick count of the timer
  * @param tmr the timer to get the tick count of
  * @return the tick count of the timer
