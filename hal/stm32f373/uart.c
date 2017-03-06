@@ -269,7 +269,7 @@ void uart_set_read_timeout(uart_t *uart, float timeout)
 	uint32_t baudrate = uart->cfg.USART_BaudRate;
 	uint32_t rto = MIN(MAX_RTO, timeout*baudrate);
 
-	uart->read_timeout = rto/baudrate;
+	uart->read_timeout = (float)rto/(float)baudrate;
 	if (timeout > 0)
 		USART_SetReceiverTimeOut(uart->channel, rto);
 }
