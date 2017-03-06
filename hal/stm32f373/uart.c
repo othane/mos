@@ -324,6 +324,14 @@ done:
 }
 
 
+void uart_cancel_read(uart_t *uart)
+{
+	sys_enter_critical_section();
+	uart_clear_read(uart);
+	sys_leave_critical_section();
+}
+
+
 void uart_write(uart_t *uart, void *buf, uint16_t len, uart_write_complete_cb cb, void *param)
 {
 	// sanity checks
@@ -362,6 +370,14 @@ void uart_write(uart_t *uart, void *buf, uint16_t len, uart_write_complete_cb cb
 done:
 	sys_leave_critical_section();
 	return;
+}
+
+
+void uart_cancel_write(uart_t *uart)
+{
+	sys_enter_critical_section();
+	uart_clear_write(uart);
+	sys_leave_critical_section();
 }
 
 
