@@ -14,6 +14,9 @@ nvm:
 spis:
 	make -C spis
 
+uart:
+	make -C tmr
+
 crc:
 	make -C crc EMBEDDED=1
 
@@ -28,6 +31,7 @@ clean:
 	make -C gpio clean
 	make -C nvm clean
 	make -C spis clean
+	make -C tmr clean
 	make -C crc EMBEDDED=1 clean
 	make -C bootstrap clean
 	make -C sched clean
