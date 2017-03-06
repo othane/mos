@@ -19,6 +19,48 @@
 #include "hal.h"
 #include "tmr_hw.h"
 
+// look up the irq channel for this tmr (18 seems a little wasteful, but it is easier atm)
+static tmr_t *tmr_irq_list[18] = {NULL,};  ///< just store the tmr handle so we can get it in the irq (then hw.c is more free form)
+static uint8_t tmr_irq(tmr_t *tmr)
+{
+	switch ((uint32_t)tmr->tim)
+	{
+		case (uint32_t)TIM2:
+			tmr_irq_list[2] = tmr;
+			return TIM2_IRQn;
+		case (uint32_t)TIM3:
+			tmr_irq_list[3] = tmr;
+			return TIM3_IRQn;
+		case (uint32_t)TIM4:
+			tmr_irq_list[4] = tmr;
+			return TIM4_IRQn;
+		case (uint32_t)TIM5:
+			tmr_irq_list[5] = tmr;
+			return TIM5_IRQn;
+		case (uint32_t)TIM6:
+			tmr_irq_list[6] = tmr;
+			return TIM6_DAC1_IRQn;
+		case (uint32_t)TIM7:
+			tmr_irq_list[7] = tmr;
+			return TIM7_IRQn;
+		case (uint32_t)TIM12:
+			tmr_irq_list[12] = tmr;
+			return TIM12_IRQn;
+		case (uint32_t)TIM13:
+			tmr_irq_list[13] = tmr;
+			return TIM13_IRQn;
+		case (uint32_t)TIM14:
+			tmr_irq_list[14] = tmr;
+			return TIM14_IRQn;
+		case (uint32_t)TIM18:
+			tmr_irq_list[18] = tmr;
+			return TIM18_DAC2_IRQn;
+		default:
+			///@todo error
+			return 0x00;
+	}
+}
+
 static void init_rcc(struct tmr_t *tmr)
 {
 	switch ((int)tmr->tim)
@@ -143,12 +185,16 @@ static void tmr_sync_cfg(struct tmr_t *tmr)
 
 void tmr_start(tmr_t *tmr)
 {
+	TIM_ClearITPendingBit(tmr->tim, TIM_IT_Update);
+	TIM_ITConfig(tmr->tim, TIM_IT_Update, ENABLE);
 	TIM_Cmd(tmr->tim, ENABLE);
 }
 
 
 void tmr_stop(tmr_t *tmr)
 {
+	TIM_ITConfig(tmr->tim, TIM_IT_Update, DISABLE);
+	TIM_ClearITPendingBit(tmr->tim, TIM_IT_Update);
 	TIM_Cmd(tmr->tim, DISABLE);
 }
 
@@ -205,6 +251,13 @@ void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *
 {
 	tmr->freq_update_cb_param[tmr_ch2n(channel)] = param;
 	tmr->freq_update_cb[tmr_ch2n(channel)] = cb;
+}
+
+
+void tmr_set_update_cb(tmr_t *tmr, tmr_update_cb_t cb, void *param)
+{
+	tmr->update_cb_param = param;
+	tmr->update_cb = cb;
 }
 
 
@@ -269,10 +322,98 @@ uint32_t tmr_get_tick(tmr_t *tmr)
 
 void tmr_init(tmr_t *tmr)
 {
+	NVIC_InitTypeDef nvic_init;
+
 	// enable RCC for the tmr and setup the period and pre scaler
 	init_rcc(tmr);
+
+	// setup the tmr isr
+	nvic_init.NVIC_IRQChannelCmd = ENABLE;
+	nvic_init.NVIC_IRQChannel = tmr_irq(tmr);
+	nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic_init.NVIC_IRQChannelSubPriority = 0;
+	nvic_init.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&nvic_init);
+
 	tmr_set_freq(tmr, tmr->freq);
 	tmr_sync_cfg(tmr);
 	dbg_stop(tmr);
+}
+
+static void tmr_irq_handler(int n)
+{
+	tmr_t *tmr = tmr_irq_list[n];
+	tmr_update_cb_t update_cb = NULL;
+	void *update_cb_param = NULL;
+
+
+	if (tmr == NULL)
+		return;
+
+	if (TIM_GetITStatus(tmr->tim, TIM_IT_Update))
+	{
+		TIM_ClearITPendingBit(tmr->tim, TIM_IT_Update);
+		if (tmr->update_cb != NULL)
+		{
+			update_cb = tmr->update_cb;
+			update_cb_param = tmr->update_cb_param;
+		}
+	}
+
+	// run differed callbacks
+	if (update_cb)
+		update_cb(tmr, update_cb_param);
+}
+
+void TIM2_IRQHandler(void)
+{
+	tmr_irq_handler(2);
+}
+
+void TIM3_IRQHandler(void)
+{
+	tmr_irq_handler(3);
+}
+
+void TIM4_IRQHandler(void)
+{
+	tmr_irq_handler(4);
+}
+
+void TIM5_IRQHandler(void)
+{
+	tmr_irq_handler(5);
+}
+
+///@todo break this out into common code for dma is unerrun/overrun events are needed !!
+void TIM6_DAC1_IRQHandler(void)
+{
+	tmr_irq_handler(6);
+}
+
+void TIM7_IRQHandler(void)
+{
+	tmr_irq_handler(7);
+}
+
+void TIM12_IRQHandler(void)
+{
+	tmr_irq_handler(12);
+}
+
+void TIM13_IRQHandler(void)
+{
+	tmr_irq_handler(13);
+}
+
+void TIM14_IRQHandler(void)
+{
+	tmr_irq_handler(14);
+}
+
+///@todo break this out into common code for dma is unerrun/overrun events are needed !!
+void TIM18_DAC2_IRQHandler(void)
+{
+	tmr_irq_handler(18);
 }
 

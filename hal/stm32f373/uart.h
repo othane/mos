@@ -54,6 +54,12 @@ typedef void (*uart_write_complete_cb)(uart_t *uart, void *buf, uint16_t len, vo
  */
 void uart_write(uart_t *uart, void *buf, uint16_t len, uart_write_complete_cb cb, void *param);
 
+/**
+ * @brief cancel uart write
+ * @param uart uart device to cancel write on
+ */
+void uart_cancel_write(uart_t *uart);
+
 
 /**
  * @brief callback when a uart read completes
@@ -75,5 +81,11 @@ typedef void (*uart_read_complete_cb)(uart_t *uart, void *buf, uint16_t len, voi
  */
 void uart_read(uart_t *uart, void *buf, uint16_t len, uart_read_complete_cb cb, void *param);
 
+
+/**
+ * @brief cancel uart read
+ * @param uart uart device to cancel read on
+ */
+void uart_cancel_read(uart_t *uart);
 
 #endif

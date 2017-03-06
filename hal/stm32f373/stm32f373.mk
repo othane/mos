@@ -35,12 +35,12 @@ export INCDIR = $(patsubst %,$(SELF_DIR)%,$(HINCDIR))
 # openocd variables and targets
 OPENOCD_PATH ?= /usr/local/share/openocd/
 export OPENOCD_BIN = openocd
-export OPENOCD_INTERFACE = $(OPENOCD_PATH)/scripts/interface/stlink-v2.cfg
-export OPENOCD_TARGET = $(OPENOCD_PATH)/scripts/target/stm32f3x_stlink.cfg
+export OPENOCD_INTERFACE ?= $(OPENOCD_PATH)/scripts/interface/stlink-v2.cfg
+export OPENOCD_TARGET = $(OPENOCD_PATH)/scripts/target/stm32f3x.cfg
 
 OPENOCD_FLASH_CMDS = ''
 OPENOCD_FLASH_CMDS += -c 'reset halt'
-OPENOCD_FLASH_CMDS += -c 'sleep 10' 
+OPENOCD_FLASH_CMDS += -c 'sleep 10'
 OPENOCD_FLASH_CMDS += -c 'stm32f1x unlock 0'
 OPENOCD_FLASH_CMDS += -c 'flash write_image erase $(PRJ_FULL) 0 ihex'
 OPENOCD_FLASH_CMDS += -c shutdown
@@ -48,8 +48,9 @@ export OPENOCD_FLASH_CMDS
 
 OPENOCD_ERASE_CMDS = ''
 OPENOCD_ERASE_CMDS += -c 'reset halt'
-OPENOCD_ERASE_CMDS += -c 'sleep 10' 
-OPENOCD_ERASE_CMDS += -c 'sleep 10' 
+OPENOCD_ERASE_CMDS += -c 'sleep 10'
+OPENOCD_ERASE_CMDS += -c 'sleep 10'
+OPENOCD_FLASH_CMDS += -c 'stm32f1x unlock 0'
 OPENOCD_ERASE_CMDS += -c 'stm32f1x mass_erase 0'
 OPENOCD_ERASE_CMDS += -c shutdown
 export OPENOCD_ERASE_CMDS
@@ -66,6 +67,18 @@ OPENOCD_DEBUG_CMDS = ''
 OPENOCD_DEBUG_CMDS += -c 'halt'
 OPENOCD_DEBUG_CMDS += -c 'sleep 10'
 
+OPENOCD_VERIFY_CMDS = ''
+OPENOCD_VERIFY_CMDS += -c 'reset halt'
+OPENOCD_VERIFY_CMDS += -c 'sleep 10'
+OPENOCD_VERIFY_CMDS += -c 'verify_image $(PRJ_FULL) 0 ihex'
+OPENOCD_VERIFY_CMDS += -c shutdown
+
+OPENOCD_DUMP_CMDS = ''
+OPENOCD_DUMP_CMDS += -c 'reset halt'
+OPENOCD_DUMP_CMDS += -c 'sleep 10'
+OPENOCD_DUMP_CMDS += -c 'dump_image dump.bin 0 0x40000'
+OPENOCD_DUMP_CMDS += -c shutdown
+
 .flash:
 	$(OPENOCD_BIN) -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init $(OPENOCD_FLASH_CMDS)
 
@@ -77,4 +90,11 @@ OPENOCD_DEBUG_CMDS += -c 'sleep 10'
 
 .debug:
 	$(OPENOCD_BIN) -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init $(OPENOCD_DEBUG_CMDS)
+
+.verify:
+	$(OPENOCD_BIN) -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init $(OPENOCD_VERIFY_CMDS)
+
+.dump:
+	$(OPENOCD_BIN) -f $(OPENOCD_INTERFACE) -f $(OPENOCD_TARGET) -c init $(OPENOCD_DUMP_CMDS)
+	$(BIN) -I binary dump.bin dump.hex
 
