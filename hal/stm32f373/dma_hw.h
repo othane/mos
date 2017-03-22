@@ -28,6 +28,8 @@ struct dma_request_t
 
 void dma_request(dma_request_t *req);
 
+int dma_remaining(dma_request_t *req);
+
 struct dma_t
 {
 	DMA_Channel_TypeDef *channel;
