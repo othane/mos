@@ -324,6 +324,19 @@ done:
 }
 
 
+int uart_read_count(uart_t *uart)
+{
+	if (uart->read_buf_len == 0)
+		// no read in progress
+		return -1;
+
+	if (uart->rx_dma)
+		return uart->read_buf_len - dma_remaining(&uart->rx_dma_req);
+	else
+		return uart->read_count;
+}
+
+
 void uart_cancel_read(uart_t *uart)
 {
 	sys_enter_critical_section();
@@ -370,6 +383,19 @@ void uart_write(uart_t *uart, void *buf, uint16_t len, uart_write_complete_cb cb
 done:
 	sys_leave_critical_section();
 	return;
+}
+
+
+int uart_write_count(uart_t *uart)
+{
+	if (uart->write_buf_len == 0)
+		// no write in progress
+		return -1;
+
+	if (uart->tx_dma)
+		return uart->write_buf_len - dma_remaining(&uart->tx_dma_req);
+	else
+		return uart->write_count;
 }
 
 

@@ -280,6 +280,12 @@ void dma_request(dma_request_t *req)
 	DMA_Cmd(dma->channel, ENABLE);
 }
 
+int dma_remaining(dma_request_t *req)
+{
+	dma_t *dma = req->dma;
+	return dma->channel->CNDTR;
+}
+
 void dma_cancel(dma_t *dma)
 {
 	if (dma == NULL)
