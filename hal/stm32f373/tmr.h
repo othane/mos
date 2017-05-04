@@ -51,24 +51,34 @@ void tmr_reset(tmr_t *tmr);
 
 
 /**
- * @brief change the tmr frequency
+ * @brief change the tmr period
+ * @param tmr the timer to change the period of
+ * @param period new period in seconds
+ * @note this change effects the whole timer !
+ * @return actual period found in seconds
+ */
+float tmr_set_period(tmr_t *tmr, float period);
+
+
+/**
+ * @brief change the tmr frequency (aka 1/period)
  * @param tmr the timer to change the frequency of
  * @param freq new frequency in hz
  * @note this change effects the whole timer !
  * @return actual frequency found in Hz
  */
-uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq);
+float tmr_set_freq(tmr_t *tmr, float freq);
 
 
 /**
- * @brief add callback to run for each channel when this timer changes its frequency
+ * @brief add callback to run for each channel when this timer changes its timebase
  * @param tmr timer to connect the callback
  * @param cb callback function
  * @param channel indicates which channel on the timer this is called for
  * @param param callback parameter
  */
-typedef void (*freq_update_cb_t)(tmr_t *tmr, int ch, void *param); // internal callback for pwm/ppm modules etc
-void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *param); // internal function only
+typedef void (*timebase_update_cb_t)(tmr_t *tmr, int ch, void *param); // internal callback for pwm/ppm modules etc
+void tmr_set_timebase_update_cb(tmr_t *tmr, timebase_update_cb_t cb, int channel, void *param); // internal function only
 
 
 /**
