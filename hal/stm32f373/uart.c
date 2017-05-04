@@ -245,16 +245,8 @@ static void uart_dma_cfg(uart_t *uart, int dir, dma_request_t *dma_req, void *bu
 		uart_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
 	}
 	uart_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	if (uart->cfg.USART_WordLength == USART_WordLength_9b)
-	{
-		uart_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
-		uart_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
-	}
-	else
-	{
-		uart_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
-		uart_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
-	}
+	uart_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
+	uart_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_Byte;
 	uart_cfg->DMA_Mode = DMA_Mode_Normal;
 	uart_cfg->DMA_Priority = DMA_Priority_High;
 	uart_cfg->DMA_M2M = DMA_M2M_Disable;
