@@ -61,12 +61,12 @@ void ppm_set_phs(ppm_channel_t *ppm, float phs)
 	// turn phs into a ccr value
 	if (phs < 0.5)
 	{
-		ccr = ppm->tmr->period * 2 * phs - 1;
+		ccr = ppm->tmr->arr * 2 * phs - 1;
 		ppm->oc_cfg.TIM_OCPolarity = TIM_OCPolarity_High;
 	}
 	else
 	{
-		ccr = ppm->tmr->period * 2 * (phs - 0.5) - 1;
+		ccr = ppm->tmr->arr * 2 * (phs - 0.5) - 1;
 		ppm->oc_cfg.TIM_OCPolarity = TIM_OCPolarity_Low;
 	}
 	
@@ -128,7 +128,7 @@ void ppm_init(ppm_channel_t *ppm)
 	gpio_init_pin(ppm->pin);
 
 	// init ppm parent timer module (sets freq and phs via ppm_update_phs_on_freq_change cb)
-	tmr_set_freq_update_cb(ppm->tmr, ppm_update_phs_on_freq_change, ppm->ch, ppm);
+	tmr_set_timebase_update_cb(ppm->tmr, ppm_update_phs_on_freq_change, ppm->ch, ppm);
 	ppm->tmr->freq = ppm->freq * 2; // double frequency since we use toggle magic to make this work which needs freq*2 to the timer
 	tmr_init(ppm->tmr);
 }
