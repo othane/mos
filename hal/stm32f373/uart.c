@@ -163,7 +163,7 @@ static void uart_irq_handler(uart_t *uart)
 		// stm, so I gaurd against it here by checking the read_count > 0)
 		if (uart->rx_dma || uart->read_count > 0)
 		{
-			read_count = uart->read_count;
+			read_count = uart_read_count(uart);
 			read_complete_cb = uart->read_complete_cb;
 			uart_clear_read(uart);
 		}
