@@ -16,8 +16,14 @@
 
 #include <stm32f37x_conf.h>
 #include <math.h>
+#include <float.h>
 #include "hal.h"
 #include "tmr_hw.h"
+
+#define MIN(a,b) ((a < b)? a: b)
+#define MAX(a,b) ((a > b)? a: b)
+#define CLIP(a, amin, amax) MAX((MIN(a, amax)), amin)
+
 
 // look up the irq channel for this tmr (18 seems a little wasteful, but it is easier atm)
 static tmr_t *tmr_irq_list[18] = {NULL,};  ///< just store the tmr handle so we can get it in the irq (then hw.c is more free form)
@@ -247,10 +253,10 @@ static uint8_t tmr_n2ch(int n)
 }
 
 
-void tmr_set_freq_update_cb(tmr_t *tmr, freq_update_cb_t cb, int channel, void *param)
+void tmr_set_timebase_update_cb(tmr_t *tmr, timebase_update_cb_t cb, int channel, void *param)
 {
-	tmr->freq_update_cb_param[tmr_ch2n(channel)] = param;
-	tmr->freq_update_cb[tmr_ch2n(channel)] = cb;
+	tmr->timebase_update_cb_param[tmr_ch2n(channel)] = param;
+	tmr->timebase_update_cb[tmr_ch2n(channel)] = cb;
 }
 
 
@@ -261,17 +267,22 @@ void tmr_set_update_cb(tmr_t *tmr, tmr_update_cb_t cb, void *param)
 }
 
 
-uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq)
+float tmr_set_period(tmr_t *tmr, float period)
 {
 	uint32_t tmr_freq = sys_clk_freq();
-	uint32_t period, prescaler;
+	uint32_t arr;
+	uint32_t prescaler; ///@todo if this is a 32bit timer we can go higher
+	uint32_t scale = lroundf((float)tmr_freq * period);
 	uint8_t k;
 
-	// find the highest period value using the smallest pre-scaler (ie best resolution)
-	for (prescaler = 1; prescaler <= UINT16_MAX; prescaler++)
+	// find the highest period value using the smallest pre-scaler (ie best
+	// resolution), we could try to find the most precise frequency by looking
+	// for factors of scale but this likely isn't as important as setting the
+	// timer resolution in most applications
+	for (prescaler = 1; prescaler <= UINT16_MAX + 1; prescaler++)
 	{
-		period = tmr_freq / (freq * prescaler);
-		if (period <= UINT16_MAX)
+		arr = scale / prescaler;
+		if (arr <= UINT16_MAX + 1) ///@todo if this is a 32bit timer we can go higher
 			goto done;
 	}
 
@@ -279,14 +290,16 @@ uint32_t tmr_set_freq(tmr_t *tmr, uint32_t freq)
 	// slowest we can !
 
 done:
-	// reconfigure the timer to set the desired frequency
+	arr = CLIP(arr, 1, 65535); ///@todo if this is a 32bit timer we can go higher
+
+	// reconfigure the timer to set the desired period
 	if (tmr_running(tmr))
 	{
-		// if the timer is already running we will switch to the new frequency
+		// if the timer is already running we will switch to the new period
 		// at the next update event to avoid glitching
 		sys_enter_critical_section();
-		TIM_SetAutoreload(tmr->tim, period - 1);
-		tmr->period = period;
+		TIM_SetAutoreload(tmr->tim, arr - 1);
+		tmr->arr = arr;
 		TIM_PrescalerConfig(tmr->tim, prescaler - 1, TIM_PSCReloadMode_Update);
 		sys_leave_critical_section();
 	}
@@ -297,21 +310,35 @@ done:
 		// case (this will basically handle some stuff that should be run in init 
 		// (and wont matter if it run again) and use TIM_PSCReloadMode_Immediate
 		TIM_TimeBaseStructInit(&tmr->cfg);
-		tmr->cfg.TIM_Period = period - 1;
+		tmr->cfg.TIM_Period = arr - 1;
 		tmr->cfg.TIM_Prescaler = prescaler - 1;
 		tmr->cfg.TIM_CounterMode = TIM_CounterMode_Up;
 		TIM_TimeBaseInit(tmr->tim, &tmr->cfg);
-		tmr->period = period;
+		tmr->arr = arr;
 	}
 
 	// run this callback so other modules building on this know to
 	// update their duty cycles etc
 	for (k=0; k<4; k++)
-		if (tmr->freq_update_cb[k])
-			tmr->freq_update_cb[k](tmr, tmr_n2ch(k), tmr->freq_update_cb_param[k]);
+		if (tmr->timebase_update_cb[k])
+			tmr->timebase_update_cb[k](tmr, tmr_n2ch(k), tmr->timebase_update_cb_param[k]);
 
-	// return the actual frequency used
-	return tmr_freq / (period * prescaler);
+	// return the actual period used
+	return (float)(prescaler * arr) / (float)tmr_freq;
+}
+
+
+float tmr_set_freq(tmr_t *tmr, float freq)
+{
+	float res;
+
+	// avoid div 0 errors by setting max period
+	if (freq <= 0)
+		res = tmr_set_period(tmr, FLT_MAX);
+	else
+		res = tmr_set_period(tmr, 1.0f/freq);
+
+	return 1.0f/res;
 }
 
 
@@ -335,7 +362,12 @@ void tmr_init(tmr_t *tmr)
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);
 
-	tmr_set_freq(tmr, tmr->freq);
+	// set either default period or frequency depending what is given
+	// if none we set to the slowest timer possible (smallest freq)
+	if (tmr->period > 0.0f)
+		tmr_set_period(tmr, tmr->period);
+	else
+		tmr_set_freq(tmr, tmr->freq);
 	tmr_sync_cfg(tmr);
 	dbg_stop(tmr);
 }

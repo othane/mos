@@ -22,8 +22,9 @@ struct tmr_t
 {
 	TIM_TypeDef *tim;				///< which timer do you want to use
 
-	uint32_t freq;
-	uint32_t period;
+	float period;	// initial period of the tmr (set either period xor freq)
+	float freq;		// "
+	uint32_t arr;
 	TIM_TimeBaseInitTypeDef cfg;
 	uint8_t stop_on_halt;
 
@@ -35,8 +36,8 @@ struct tmr_t
 		uint16_t input_trigger;		// see TIM_Internal_Trigger_Selection (table 45 in reference manual)
 	} sync;
 
-	freq_update_cb_t freq_update_cb[4];
-	void *freq_update_cb_param[4];
+	timebase_update_cb_t timebase_update_cb[4];
+	void *timebase_update_cb_param[4];
 
 	tmr_update_cb_t update_cb;
 	void *update_cb_param;

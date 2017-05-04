@@ -69,10 +69,10 @@ void pwm_set_duty(pwm_channel_t *pwm, float duty)
 	switch (pwm->oc_cfg.TIM_OCMode)
 	{
 		case TIM_OCMode_PWM1:
-			ccr = round(pwm->tmr->period * duty);
+			ccr = round(pwm->tmr->arr * duty);
 			break;
 		case TIM_OCMode_PWM2:
-			ccr = round(pwm->tmr->period * (1 - duty));
+			ccr = round(pwm->tmr->arr * (1 - duty));
 			break;
 		default:
 			///@todo error invalid mode
@@ -135,7 +135,7 @@ void pwm_init(pwm_channel_t *pwm)
 	gpio_init_pin(pwm->pin);
 
 	// init pwm parent timer module (sets freq and duty via pwm_update_duty_on_freq_change cb)
-	tmr_set_freq_update_cb(pwm->tmr, pwm_update_duty_on_freq_change, pwm->ch, pwm);
+	tmr_set_timebase_update_cb(pwm->tmr, pwm_update_duty_on_freq_change, pwm->ch, pwm);
 	tmr_init(pwm->tmr);
 }
 
