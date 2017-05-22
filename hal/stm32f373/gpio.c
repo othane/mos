@@ -372,7 +372,7 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 	// Enable and set EXTI9_5 Interrupt to the lowest priority
 	save_pin_for_irq(pin);  ///@todo this may need to warn if another pin is registered with this irq in case the caller forgets the pins share irq's
 	nvic_init.NVIC_IRQChannel = gpio_pin_to_exti_irq(pin);
-	nvic_init.NVIC_IRQChannelPreemptionPriority = 0x0F;
+	nvic_init.NVIC_IRQChannelPreemptionPriority = pin->preemption_priority;
 	nvic_init.NVIC_IRQChannelSubPriority = 0x0F;
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);

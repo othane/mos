@@ -357,7 +357,7 @@ void tmr_init(tmr_t *tmr)
 	// setup the tmr isr
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	nvic_init.NVIC_IRQChannel = tmr_irq(tmr);
-	nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic_init.NVIC_IRQChannelPreemptionPriority = tmr->preemption_priority;
 	nvic_init.NVIC_IRQChannelSubPriority = 0;
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);

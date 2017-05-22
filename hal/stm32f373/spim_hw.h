@@ -27,6 +27,7 @@ struct spim_t
 {
 	SPI_TypeDef *channel;
 	uint16_t idle_address;							///< address to select when the bus is idle
+	uint8_t preemption_priority;
 
 	// device pins
 	gpio_pin_t **nss;								///< null terminated array of address pin where the first item is the LSB and the last is the MSB in the address .. to use HW controlled NSS set st_opts.SPI_NSS = SPI_NSS_Hard and this to NULL

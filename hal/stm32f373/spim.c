@@ -272,7 +272,7 @@ void spim_init(spim_t *spim)
 	// setup the spim isr
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	nvic_init.NVIC_IRQChannel = spim_irq(spim);
-	nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic_init.NVIC_IRQChannelPreemptionPriority = spim->preemption_priority;
 	nvic_init.NVIC_IRQChannelSubPriority = 0;
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);
