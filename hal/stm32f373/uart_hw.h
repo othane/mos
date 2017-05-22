@@ -23,6 +23,7 @@ struct uart_t
 	USART_TypeDef *channel;					 	///< uart channel, ie USART1..USART3, 
 	gpio_pin_t *rx, *tx;						///< uart pins
 	USART_InitTypeDef cfg;						///< uart config (baudrate etc)
+	uint8_t preemption_priority;				///< set the pre-emption priority for uart interrupts
 
 	// read buffers
 	void *read_buf;								///< buffer to store the read results in

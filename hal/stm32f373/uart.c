@@ -424,7 +424,7 @@ void uart_init(uart_t *uart)
 	// setup the uart isr
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	nvic_init.NVIC_IRQChannel = uart_irq(uart);
-	nvic_init.NVIC_IRQChannelPreemptionPriority = 1;
+	nvic_init.NVIC_IRQChannelPreemptionPriority = uart->preemption_priority;
 	nvic_init.NVIC_IRQChannelSubPriority = 0;
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);

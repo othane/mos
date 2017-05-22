@@ -331,7 +331,7 @@ void dma_init(dma_t *dma)
 
 	// enable nvic
 	NVIC_InitStructure.NVIC_IRQChannel = dma_irq(dma);
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = dma->preemption_priority;
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
