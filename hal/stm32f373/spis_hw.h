@@ -22,6 +22,7 @@ struct spis_t
 {
 	SPI_TypeDef *channel;
 	SPI_InitTypeDef st_spi_init;					///< details of how the spis should run (not all options are supported yet)
+	uint8_t preemption_priority;
 
 	// device pins
 	gpio_pin_t *nss, *sck, *miso, *mosi;

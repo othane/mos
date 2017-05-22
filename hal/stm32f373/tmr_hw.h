@@ -27,6 +27,7 @@ struct tmr_t
 	uint32_t arr;
 	TIM_TimeBaseInitTypeDef cfg;
 	uint8_t stop_on_halt;
+	uint8_t preemption_priority;
 
 	struct
 	{
