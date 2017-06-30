@@ -383,6 +383,8 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 
 void gpio_init_pin(gpio_pin_t *pin)
 {
+	uint8_t pinpos;
+
 	// module should ignore null pins
 	if (pin == NULL)
 		return;
@@ -396,6 +398,17 @@ void gpio_init_pin(gpio_pin_t *pin)
 	if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
 		GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
 	GPIO_Init(pin->port, &pin->cfg);
+
+	// find the position for this pin (yuk long lookups)
+	pin->pos = 255; // indicates an invalid pos (the GPIO_Pin is likely bad)
+	for (pinpos = 0x00; pinpos < 16; pinpos++)
+	{
+		if (pin->cfg.GPIO_Pin == (1 << pinpos))
+		{
+			pin->pos = pinpos;
+			break;
+		}
+	}
 }
 
 
@@ -417,8 +430,10 @@ void gpio_set_falling_edge_event(gpio_pin_t *pin, gpio_edge_event cb, void *para
 }
 
 
-void gpio_set_pin(gpio_pin_t *pin, bool state)
+void gpio_set_pin(gpio_pin_t *pin, uint8_t state)
 {
+	uint32_t moder;
+
 	// module should ignore null pins
 	if (pin == NULL)
 		return;
@@ -438,15 +453,38 @@ void gpio_set_pin(gpio_pin_t *pin, bool state)
 	}
 
 	// change the pin output
-	if (state)
-		// set hi
-		pin->port->BSRR = pin->cfg.GPIO_Pin;
-	else
-		// set lo
-		pin->port->BRR = pin->cfg.GPIO_Pin;
+	moder = (pin->port->MODER >> 2*pin->pos) & GPIO_MODER_MODER0;
+	switch (state)
+	{
+		case 'Z':
+		case 'z':
+			// set the pin to floating by switching to an input
+			if (moder != GPIO_Mode_IN)
+				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
+			break;
+		case 1:
+			// set hi & ensure we are configured as a output
+			pin->port->BSRR = pin->cfg.GPIO_Pin;
+			if (moder != GPIO_Mode_OUT)
+			{
+				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
+				pin->port->MODER |= GPIO_Mode_OUT << 2*pin->pos;
+			}
+			break;
+		case 0:
+		default:
+			// set lo & ensure we are configured as a output
+			pin->port->BRR = pin->cfg.GPIO_Pin;
+			if (moder != GPIO_Mode_OUT)
+			{
+				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
+				pin->port->MODER |= GPIO_Mode_OUT << 2*pin->pos;
+			}
+			break;
+
+	}
 }
 
-// this toggles at about 58KHz max, see gpio utest
 void gpio_toggle_pin(gpio_pin_t *pin)
 {
 	// module should ignore null pins

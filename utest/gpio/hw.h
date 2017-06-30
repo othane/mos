@@ -23,6 +23,7 @@ extern gpio_pin_t gpio_led0;
 extern gpio_pin_t gpio_led1;
 extern gpio_pin_t gpio_led2;
 extern gpio_pin_t gpio_led3;
+extern gpio_pin_t gpio_tri_state;
 
 #endif
 
