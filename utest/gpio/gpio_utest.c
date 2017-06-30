@@ -41,6 +41,7 @@ void init(void)
 	gpio_init_pin(&gpio_led2);
 	gpio_init_pin(&gpio_led3);
 	gpio_init_pin(&gpio_in);
+	gpio_init_pin(&gpio_tri_state);
 
 	gpio_set_falling_edge_event(&gpio_in, falling_edge, NULL);
 	gpio_set_rising_edge_event(&gpio_in, rising_edge, NULL);
@@ -50,6 +51,7 @@ int main(void)
 {
 	volatile bool pa_in_state unused;
 	int k;
+	uint8_t tri_state = 1;
 
 	init();
 
@@ -79,7 +81,24 @@ int main(void)
 				{}
 			}
 		}
+
+		// test input
 		pa_in_state = gpio_get_pin(&gpio_in);
+
+		// test tri state outputs by making a 3 level ramp
+		switch (tri_state)
+		{
+			case 0:
+				tri_state = 'z';
+				break;
+			case 'z':
+				tri_state = 1;
+				break;
+			case 1:
+				tri_state = 0;
+				break;
+		}
+		gpio_set_pin(&gpio_tri_state, tri_state);
 	}
 
 	return 0;
