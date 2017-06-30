@@ -31,4 +31,5 @@ gpio_pin_t gpio_led0		= {GPIOC, {GPIO_Pin_0,  GPIO_Mode_OUT, GPIO_Speed_50MHz, G
 gpio_pin_t gpio_led1		= {GPIOC, {GPIO_Pin_1,  GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL}};
 gpio_pin_t gpio_led2		= {GPIOC, {GPIO_Pin_2,  GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL}};
 gpio_pin_t gpio_led3		= {GPIOC, {GPIO_Pin_3,  GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL}};
+gpio_pin_t gpio_tri_state	= {GPIOA, {GPIO_Pin_3,  GPIO_Mode_OUT, GPIO_Speed_50MHz, GPIO_OType_PP, GPIO_PuPd_NOPULL}};
 #endif

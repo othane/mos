@@ -27,6 +27,7 @@ struct gpio_pin_t
 	gpio_edge_event falling_cb;     ///< if not NULL thane called on falling edge
 	void *falling_cb_param;         ///< passed to falling cb
 	uint8_t preemption_priority;    ///< lower is a higher priority
+	uint8_t pos;
 };
 
 

@@ -58,7 +58,7 @@ void gpio_set_falling_edge_event(gpio_pin_t *pin, gpio_edge_event cb, void *para
  * @param pin the pin from gpio_init_pin to set the value for
  * @param state set pin hi (1) or lo (0)
  */
-void gpio_set_pin(gpio_pin_t *pin, bool state);
+void gpio_set_pin(gpio_pin_t *pin, uint8_t state);
 
 
 /**
