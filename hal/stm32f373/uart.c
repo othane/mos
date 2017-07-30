@@ -399,6 +399,13 @@ void uart_cancel_write(uart_t *uart)
 }
 
 
+void uart_reset(uart_t *uart)
+{
+	USART_Cmd(uart->channel, DISABLE);
+	USART_Cmd(uart->channel, ENABLE);
+}
+
+
 void uart_init(uart_t *uart)
 {
 	NVIC_InitTypeDef nvic_init;
