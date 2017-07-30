@@ -98,6 +98,13 @@ int uart_read_count(uart_t *uart);
 
 
 /**
+ * @brief reset the whole uart
+ * @param uart uart device being reset
+ */
+void uart_reset(uart_t *uart);
+
+
+/**
  * @brief cancel uart read
  * @param uart uart device to cancel read on
  */
