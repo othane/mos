@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "gpio.h"
 #include "uart.h"
+#include "i2c.h"
 #include "spis.h"
 #include "spim.h"
 #include "nvm.h"
