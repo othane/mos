@@ -39,7 +39,6 @@ SRC  = ./STM32F37x_DSP_StdPeriph_Lib_V1.0.0/Libraries/CMSIS/Device/ST/STM32F37x/
 	./crc.c \
 	./bootstrap.c \
 	./spi.c \
-	./i2c.c \
 	./sys.c
 
 # these files are only included when configured ... this is because they implement isr's and gcc cannot 
