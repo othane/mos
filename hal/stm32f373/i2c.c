@@ -15,7 +15,7 @@
 #include "dma_hw.h"
 #include "i2c_hw.h"
 
-__IO uint32_t  I2C_Timeout = I2C_TIMEOUT;
+volatile uint32_t  I2C_Timeout = I2C_TIMEOUT;
 
 static i2c_t *i2c_irq_list[2] = {NULL,};  ///< just store the i2c handle so we can get it in the irq (then hw.c is more free form)
 static uint8_t i2c_irq(i2c_t *i2c)
