@@ -42,7 +42,7 @@ typedef void (*i2c_write_complete_cb)(i2c_t *i2c, void *buf, uint16_t len, void 
  * @param cb completion callback
  * @param param parameter passed to the completion callback
  */
-void i2c_write(i2c_t *i2c, uint8_t device_address,void *buf, uint16_t len, i2c_write_complete_cb cb, void *param);
+int i2c_write(i2c_t *i2c, uint8_t device_address,void *buf, uint16_t len, i2c_write_complete_cb cb, void *param);
 
 /**
  * @brief return the number of bytes written so far
@@ -84,7 +84,7 @@ typedef void (*i2c_read_complete_cb)(i2c_t *i2c, void *buf, uint16_t len, void *
  * @param cb completion callback
  * @param param parameter passed to the completion callback
  */
-void i2c_read(i2c_t *i2c, uint8_t device_address,void *buf,uint16_t len, i2c_read_complete_cb cb, void *param);
+int i2c_read(i2c_t *i2c, uint8_t device_address,void *buf,uint16_t len, i2c_read_complete_cb cb, void *param);
 
 /**
  * @brief return the number of bytes read so far

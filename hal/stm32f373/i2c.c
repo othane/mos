@@ -194,7 +194,7 @@ static void i2c_dma_cfg(i2c_t *i2c, int dir, dma_request_t *dma_req, void *buf, 
     i2c_cfg->DMA_DIR = dir ? DMA_DIR_PeripheralDST: DMA_DIR_PeripheralSRC;
 }
 
-void i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_read_complete_cb cb, void *param)
+int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_read_complete_cb cb, void *param)
 {   
     // sanity checks
     if (len < 1)
@@ -205,7 +205,7 @@ void i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_r
     I2C_Timeout = I2C_LONG_TIMEOUT;
     while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_BUSY) != RESET)
     {
-        if((I2C_Timeout--) == 0);
+        if((I2C_Timeout--) == 0) return -1;
     }
     if (i2c->read_buf != NULL || i2c->read_count != 0)
         ///@todo read in progress already
@@ -222,7 +222,7 @@ void i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_r
     I2C_Timeout = I2C_LONG_TIMEOUT;
     while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_RXNE) == RESET)
     {
-        if((I2C_Timeout--) == 0);
+        if((I2C_Timeout--) == 0) return -1;
     }
     if (i2c->rx_dma)
     {
@@ -262,7 +262,7 @@ void i2c_cancel_read(i2c_t *i2c)
 
 }
 
-void i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_write_complete_cb cb, void *param)
+int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_write_complete_cb cb, void *param)
 {
     // sanity checks
     int delay=100;
@@ -272,7 +272,7 @@ void i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_
     I2C_Timeout = I2C_LONG_TIMEOUT;
     while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_BUSY) != RESET)
     {
-        if((I2C_Timeout--) == 0);
+        if((I2C_Timeout--) == 0) return -1;
     }
     sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup write
     if (i2c->write_buf != NULL || i2c->write_count != 0)
@@ -289,7 +289,7 @@ void i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_
     I2C_Timeout = I2C_LONG_TIMEOUT;
     while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_TXIS) == RESET)
     {
-        if((I2C_Timeout--) == 0) ;
+        if((I2C_Timeout--) == 0) return -1;
     }
     if (i2c->tx_dma)
     {
@@ -308,7 +308,7 @@ void i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_
     }
 done:
     sys_leave_critical_section();
-    return;
+    return ;
 }
 
 int i2c_write_count(i2c_t *i2c)
