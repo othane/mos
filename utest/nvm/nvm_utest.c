@@ -16,8 +16,10 @@
 #include <hal.h>
 #include <string.h>
 
-const char msg[32] at_symbol(".free_page") = "hello";
-char msg_ram[32] = {0,};
+const char page0[2*16*1024] at_symbol(".free_page0") = {1,2,3,4,};
+char page0_ram[sizeof(page0)];
+const char msg[32] at_symbol(".free_page1") = "hello";
+char msg_ram[sizeof(msg)] = {0,};
 
 
 void init(void)
@@ -35,6 +37,16 @@ int main(void)
 	nvm_read(msg_ram, msg, 32);
 	if (strcmp(msg_ram, "hello") == 0)
 	{
+		int n;
+
+		// check we can erase 2 pages properly
+		nvm_erase((void*)page0, sizeof(page0));
+		for (n = 0; n < sizeof(page0_ram); n++)
+			page0_ram[n] = 1;
+		nvm_write((void*)page0, page0_ram, sizeof(page0));
+		nvm_erase((void*)page0, sizeof(page0));
+
+		// check we can write to flash and save it after a power cycle
 		nvm_erase((void*)msg, 32);
 		nvm_write((void*)msg, "world", 5);
 		sys_reset();
