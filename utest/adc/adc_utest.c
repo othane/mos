@@ -14,7 +14,6 @@
 #include <string.h>
 #include <hal.h>
 
-adc_channel_t *chan = &adc_chanC;
 volatile uint16_t buf[4096];
 volatile uint32_t val = 0;
 
@@ -29,7 +28,7 @@ volatile void *vmemset(volatile void *s, int8_t c, size_t n)
 void init(void)
 {
 	sys_init();
-	adc_channel_init(chan);
+	adc_channel_init(adc_chan);
 	vmemset(buf, 0x00, sizeof(buf));
 }
 
@@ -55,8 +54,8 @@ int main(void)
 {
 	init();
 
-	val = adc_read(chan);
-	adc_trace(chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, NULL);
+	val = adc_read(adc_chan);
+	adc_trace(adc_chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, NULL);
 	while (1)
 	{}
 

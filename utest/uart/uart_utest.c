@@ -21,22 +21,21 @@ void init(void)
 {
 	sys_init();
 	uart_init(&uart_dev);
-	uart_set_read_timeout(&uart_dev, 1);
-}
-
-
-uint8_t rx_buf[16] = {0x00,};
-void rx_complete(uart_t *uart, void *buf, uint16_t len, void *param)
-{
-	uart_read(uart, buf, sizeof(rx_buf), rx_complete, param);
 }
 
 
 bool tx_flag = true;
-uint8_t tx_buf[] = "Hello World\n\r";
+uint8_t tx_buf[] = "Hello World\r\n";
 void tx_complete(uart_t *uart, void *buf, uint16_t len, void *param)
 {
 	tx_flag = true;
+}
+
+
+uint8_t rx_buf[sizeof(tx_buf)] = {0x00,};
+void rx_complete(uart_t *uart, void *buf, uint16_t len, void *param)
+{
+	uart_read(uart, buf, sizeof(rx_buf), rx_complete, param);
 }
 
 

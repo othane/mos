@@ -18,6 +18,8 @@ OBJS = $(SRC:.c=.o)
 INCDIR += ../../hal/
 INC = $(patsubst %,-I%,$(INCDIR))
 
+CPFLAGS += -DxSYNC
+
 LDSCRIPT = ./../../hal/$(ARCH)/utest.ld
 LDFLAGS += -T$(LDSCRIPT)
 
