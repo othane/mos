@@ -6,7 +6,7 @@
  * This test is designed to check the sys module sets the clks up
  * as desired and that timing is correct in general.
  *
- * FOR STM32F107x:
+ * FOR STM32F107x && STM32F373 && STM32F4x:
  * PA8 should output the sys_clk / 2 which can be checked via scope to
  *  ensure the cpu is running at the correct frequency
  * PA10 should output a 1ms hi, 1ms low square wave generated via the

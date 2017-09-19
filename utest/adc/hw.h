@@ -14,10 +14,7 @@
 #ifndef __HW__
 #define __HW__
 
-extern adc_channel_t adc_chanA;
-extern adc_channel_t adc_chanB;
-extern adc_channel_t adc_chanC;
-extern adc_channel_t adc_chanD;
+extern adc_channel_t *adc_chan;
 
 #endif
 

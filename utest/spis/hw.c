@@ -59,4 +59,44 @@
 		.rx_dma = &spis_rx_dma,
 		.tx_dma = &spis_tx_dma,
 	};
+
+#elif defined STM32F40_41xxx
+
+	#include <stm32f4xx_conf.h>
+	#include <gpio_hw.h>
+	gpio_pin_t gpio_spi1_nss    = {GPIOA, {GPIO_Pin_4, GPIO_Mode_AF, GPIO_Speed_50MHz}, 5};
+	gpio_pin_t gpio_spi1_sck    = {GPIOA, {GPIO_Pin_5,  GPIO_Mode_AF, GPIO_Speed_50MHz}, 5};
+	gpio_pin_t gpio_spi1_miso   = {GPIOA, {GPIO_Pin_6,  GPIO_Mode_AF, GPIO_Speed_50MHz}, 5};
+	gpio_pin_t gpio_spi1_mosi   = {GPIOA, {GPIO_Pin_7,  GPIO_Mode_AF, GPIO_Speed_50MHz}, 5};
+
+	#include <dma_hw.h>
+	dma_t spis_rx_dma =
+	{
+		.stream = DMA2_Stream0,
+		.channel = DMA_Channel_3,
+	};
+	dma_t spis_tx_dma =
+	{
+		.stream = DMA2_Stream3,
+		.channel = DMA_Channel_3,
+	};
+
+	#include <spis_hw.h>
+	spis_t spis_dev =
+	{
+		.channel = SPI1,   // channel
+		.st_spi_init = {SPI_Direction_2Lines_FullDuplex, SPI_Mode_Slave, SPI_DataSize_8b, SPI_CPOL_Low, SPI_CPHA_1Edge, SPI_NSS_Hard, SPI_BaudRatePrescaler_2, SPI_FirstBit_MSB, 0},
+		.nss = &gpio_spi1_nss, // select line gpio
+		.sck = &gpio_spi1_sck, // clk line gpio
+		.miso = &gpio_spi1_miso, // miso gpio
+		.mosi = &gpio_spi1_mosi, // mosi gpio
+
+		.rx_dma = &spis_rx_dma,
+		.tx_dma = &spis_tx_dma,
+	};
+
+#else
+
+	#warn "spi driver not available on this arch yet"
+
 #endif
