@@ -312,7 +312,7 @@ void sys_init(void)
 }
 
 
-//#ifdef USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
  * @brief report the file and line where the assert failed and spin
  * @param  file pointer to the source file name
@@ -325,7 +325,7 @@ void assert_failed(uint8_t* file, uint32_t line)
 	{}
 }
 
-//#endif
+#endif
 
 
 
