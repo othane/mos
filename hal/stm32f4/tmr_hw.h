@@ -25,6 +25,7 @@ struct tmr_t
 	float period;	// initial period of the tmr (set either period xor freq)
 	float freq;		// "
 	uint32_t arr;
+	uint16_t prescaler;
 	TIM_TimeBaseInitTypeDef cfg;
 	uint8_t stop_on_halt;
 	uint8_t preemption_priority;
@@ -35,6 +36,10 @@ struct tmr_t
 		uint16_t slave_mode;		// see TIM_Slave_Mode or 0 if not slave
 		uint16_t output_trigger;	// see TIM_Trigger_Output_Source
 		uint16_t input_trigger;		// see TIM_Internal_Trigger_Selection (table 45 in reference manual)
+		gpio_pin_t *edge_pin;		// optional gpio for edge detector TI1F_ED
+		uint8_t ext_clk_mode;		// {0: internal, 1: external mode 1, 2: external mode 2}
+		uint32_t ext_clk_freq;		// if ext_clk_mode is !0 this is the assumed clk frequency for set freq/period
+		gpio_pin_t *etr_pin;		// optional gpio for the ETR pin
 	} sync;
 
 	timebase_update_cb_t timebase_update_cb[4];
