@@ -71,6 +71,15 @@ float tmr_set_freq(tmr_t *tmr, float freq);
 
 
 /**
+ * @brief setup the timer sync
+ * @param tmr the timer to setup the sync on
+ * @param ext_clk_mode 0 means timer is clocked from internal clock, 1 means external clock (see ext_clk_freq)
+ * @param sync_mode if sync mode is 0 run like a normal timer, otherwise use the slave_mode for sync
+ */
+void tmr_sync_cfg(struct tmr_t *tmr, uint8_t ext_clk_mode, uint8_t sync_mode);
+
+
+/**
  * @brief add callback to run for each channel when this timer changes its timebase
  * @param tmr timer to connect the callback
  * @param cb callback function
