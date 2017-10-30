@@ -105,8 +105,13 @@ static void dbg_stop(struct tmr_t *tmr)
 }
 
 
-static uint32_t get_tmr_freq(struct tmr_t *tmr, uint32_t sys_freq)
+static uint32_t get_tmr_freq(struct tmr_t *tmr)
 {
+	uint32_t sys_freq = sys_clk_freq();
+
+	if (tmr->sync.ext_clk_mode)
+		return tmr->sync.ext_clk_freq;
+
 	switch ((int)tmr->tim)
 	{
 		// these timers are on the APB1 bus which is 1/4 the speed of the
@@ -123,14 +128,33 @@ static uint32_t get_tmr_freq(struct tmr_t *tmr, uint32_t sys_freq)
 }
 
 
-static void tmr_sync_cfg(struct tmr_t *tmr)
+void tmr_sync_cfg(struct tmr_t *tmr, uint8_t ext_clk_mode, uint8_t sync_mode)
 {
-	uint16_t slave_mode = tmr->sync.slave_mode;
+	uint16_t slave_mode = 0;
 
-	TIM_SelectMasterSlaveMode(tmr->tim, tmr->sync.master_slave);
-	TIM_SelectSlaveMode(tmr->tim, slave_mode);
-	TIM_SelectOutputTrigger(tmr->tim, tmr->sync.output_trigger);
-	TIM_SelectInputTrigger(tmr->tim, tmr->sync.input_trigger);
+	if (sync_mode)
+		slave_mode = tmr->sync.slave_mode;
+
+	switch (ext_clk_mode)
+	{
+		case 0:
+			// run from the timers internal clk
+			tmr->tim->SMCR &= ~TIM_SMCR_ECE;
+			break;
+		case 1:
+			// clock is derived from TRGI (SMS = 111, ECE = 0)
+			tmr->tim->SMCR &= ~TIM_SMCR_ECE;
+			slave_mode = TIM_SlaveMode_External1;
+			break;
+		case 2:
+			// clock is derived from ETRF (ECE = 1, TS!=ETRF)
+			tmr->tim->SMCR |= TIM_SMCR_ECE;
+			break;
+	}
+	tmr->sync.ext_clk_mode = ext_clk_mode;
+
+	TIM_SelectSlaveMode(tmr->tim, slave_mode); // set SMS bits
+	tmr->sync.slave_mode = slave_mode;
 }
 
 
@@ -212,14 +236,53 @@ void tmr_set_update_cb(tmr_t *tmr, tmr_update_cb_t cb, void *param)
 }
 
 
+void tmr_set_timebase(tmr_t *tmr, uint32_t arr, uint16_t prescaler)
+{
+	uint8_t k;
+	arr = CLIP(arr, 0, UINT16_MAX); ///@todo if this is a 32bit timer we can go higher
+
+	// reconfigure the timer to set the desired period
+	if (tmr_running(tmr))
+	{
+		// if the timer is already running we will switch to the new period
+		// at the next update event to avoid glitching
+		sys_enter_critical_section();
+		TIM_SetAutoreload(tmr->tim, arr);
+		TIM_PrescalerConfig(tmr->tim, prescaler, TIM_PSCReloadMode_Update);
+		tmr->arr = arr;
+		tmr->prescaler = prescaler;
+		sys_leave_critical_section();
+	}
+	else
+	{
+		// the timer is not running so we can set this up fully via TimeBaseInit
+		// since there is pretty much no penalty for this and it handles the init
+		// case (this will basically handle some stuff that should be run in init 
+		// (and wont matter if it run again) and use TIM_PSCReloadMode_Immediate
+		TIM_TimeBaseStructInit(&tmr->cfg);
+		tmr->cfg.TIM_Period = arr;
+		tmr->cfg.TIM_Prescaler = prescaler;
+		tmr->cfg.TIM_CounterMode = TIM_CounterMode_Up;
+		TIM_TimeBaseInit(tmr->tim, &tmr->cfg);
+		tmr->arr = arr;
+		tmr->prescaler = prescaler;
+	}
+
+	// run this callback so other modules building on this know to
+	// update their duty cycles etc
+	for (k=0; k<4; k++)
+		if (tmr->timebase_update_cb[k])
+			tmr->timebase_update_cb[k](tmr, tmr_n2ch(k), tmr->timebase_update_cb_param[k]);
+
+}
+
+
 float tmr_set_period(tmr_t *tmr, float period)
 {
-	uint32_t sys_freq = sys_clk_freq();
-	uint32_t tmr_freq = get_tmr_freq(tmr, sys_freq);
+	uint32_t tmr_freq = get_tmr_freq(tmr);
 	uint32_t arr;
 	uint32_t prescaler; ///@todo if this is a 32bit timer we can go higher
 	uint32_t scale = lroundf((float)tmr_freq * period);
-	uint8_t k;
 
 	// find the highest period value using the smallest pre-scaler (ie best
 	// resolution), we could try to find the most precise frequency by looking
@@ -234,43 +297,11 @@ float tmr_set_period(tmr_t *tmr, float period)
 
 	// if we got here we could not make a timer slow enough so we will do the
 	// slowest we can !
-
 done:
-	arr = CLIP(arr, 1, UINT16_MAX); ///@todo if this is a 32bit timer we can go higher
-
-	// reconfigure the timer to set the desired period
-	if (tmr_running(tmr))
-	{
-		// if the timer is already running we will switch to the new period
-		// at the next update event to avoid glitching
-		sys_enter_critical_section();
-		TIM_SetAutoreload(tmr->tim, arr - 1);
-		tmr->arr = arr;
-		TIM_PrescalerConfig(tmr->tim, prescaler - 1, TIM_PSCReloadMode_Update);
-		sys_leave_critical_section();
-	}
-	else
-	{
-		// the timer is not running so we can set this up fully via TimeBaseInit
-		// since there is pretty much no penalty for this and it handles the init
-		// case (this will basically handle some stuff that should be run in init 
-		// (and wont matter if it run again) and use TIM_PSCReloadMode_Immediate
-		TIM_TimeBaseStructInit(&tmr->cfg);
-		tmr->cfg.TIM_Period = arr - 1;
-		tmr->cfg.TIM_Prescaler = prescaler - 1;
-		tmr->cfg.TIM_CounterMode = TIM_CounterMode_Up;
-		TIM_TimeBaseInit(tmr->tim, &tmr->cfg);
-		tmr->arr = arr;
-	}
-
-	// run this callback so other modules building on this know to
-	// update their duty cycles etc
-	for (k=0; k<4; k++)
-		if (tmr->timebase_update_cb[k])
-			tmr->timebase_update_cb[k](tmr, tmr_n2ch(k), tmr->timebase_update_cb_param[k]);
+	tmr_set_timebase(tmr, MAX(arr - 1, 0), (uint16_t)CLIP(prescaler - 1, 0, UINT16_MAX));
 
 	// return the actual period used
-	return (float)(prescaler * arr) / (float)tmr_freq;
+	return (float)(tmr->prescaler * tmr->arr) / (float)tmr_freq;
 }
 
 
@@ -293,6 +324,7 @@ uint32_t tmr_get_tick(tmr_t *tmr)
 	return TIM_GetCounter(tmr->tim);
 }
 
+
 void tmr_init(tmr_t *tmr)
 {
 	NVIC_InitTypeDef nvic_init;
@@ -308,15 +340,39 @@ void tmr_init(tmr_t *tmr)
 	nvic_init.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&nvic_init);
 
-	// set either default period or frequency depending what is given
-	// if none we set to the slowest timer possible (smallest freq)
+	// handle initial time sync setup
+	if (tmr->sync.etr_pin)
+		gpio_init_pin(tmr->sync.etr_pin);
+	if (tmr->sync.edge_pin)
+	{
+		TIM_ICInitTypeDef ic_init =
+		{
+			.TIM_Channel = TIM_Channel_1,
+			.TIM_ICPolarity = TIM_ICPolarity_Rising,
+			.TIM_ICSelection = TIM_ICSelection_DirectTI,
+			.TIM_ICPrescaler = TIM_ICPSC_DIV1,
+			.TIM_ICFilter = 0,
+		};
+		gpio_init_pin(tmr->sync.edge_pin);
+		TIM_ICInit(tmr->tim, &ic_init);
+	}
+	TIM_SelectMasterSlaveMode(tmr->tim, tmr->sync.master_slave);
+	TIM_SelectOutputTrigger(tmr->tim, tmr->sync.output_trigger);
+	TIM_SelectInputTrigger(tmr->tim, tmr->sync.input_trigger);
+	tmr_sync_cfg(tmr, tmr->sync.ext_clk_mode, tmr->sync.slave_mode);
+
+	// if a period is given use that, otherwise use a frequency if given
+	// otherwise use the arr, prescaler values (if not give they default to 0,
+	// ie go as fast as possible)
 	if (tmr->period > 0.0f)
 		tmr_set_period(tmr, tmr->period);
-	else
+	else if (tmr->freq > 0.0f)
 		tmr_set_freq(tmr, tmr->freq);
-	tmr_sync_cfg(tmr);
+	else
+		tmr_set_timebase(tmr, tmr->arr, tmr->prescaler);
 	dbg_stop(tmr);
 }
+
 
 static void tmr_irq_handler(int n)
 {
@@ -343,25 +399,30 @@ static void tmr_irq_handler(int n)
 		update_cb(tmr, update_cb_param);
 }
 
+
 void TIM2_IRQHandler(void)
 {
 	tmr_irq_handler(2);
 }
+
 
 void TIM3_IRQHandler(void)
 {
 	tmr_irq_handler(3);
 }
 
+
 void TIM4_IRQHandler(void)
 {
 	tmr_irq_handler(4);
 }
 
+
 void TIM5_IRQHandler(void)
 {
 	tmr_irq_handler(5);
 }
+
 
 void TIM7_IRQHandler(void)
 {

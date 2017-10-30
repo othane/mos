@@ -14,9 +14,9 @@
 
 
 // describes a program the bootstrap can run
-///@todo this should be stm32f373 specific
+///@todo this should be stm32f4 specific
 #define BOOTSTRAP_PROG_HEADER 0x01
-#define BOOTSTRAP_PROG_HEADER_HW_ID 2 // make this a unique number for each HW type
+#define BOOTSTRAP_PROG_HEADER_HW_ID 3 // make this a unique number for each HW type
 packed_start
 packed(struct) bootstrap_prog_header
 {
