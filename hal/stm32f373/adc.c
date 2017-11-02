@@ -114,10 +114,10 @@ static void adc_dma_cfg(adc_t *adc, dma_request_t *dma_req, void *buf, int count
 		adc_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
 	}
 	adc_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	adc_cfg->DMA_Mode = DMA_Mode_Normal;
+	adc_cfg->DMA_Mode = adc->dma->circ? DMA_Mode_Circular: DMA_Mode_Normal;
 	adc_cfg->DMA_Priority = DMA_Priority_High;
 	adc_cfg->DMA_M2M = DMA_M2M_Disable;
-	adc_cfg->DMA_BufferSize = count; ///@todo if sync does this need to be * 2 ?
+	adc_cfg->DMA_BufferSize = count;
 	adc_cfg->DMA_DIR = DMA_DIR_PeripheralSRC;
 }
 
@@ -127,31 +127,44 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 	adc_channel_t *ch = (adc_channel_t *)param;
 	adc_t * adc = ch->adc;
 	adc_trace_complete_t cb;
+	int count;
 
 	sys_enter_critical_section();
 
-	// stop the DMA, and turn off continuous mode, we are done
-	SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
+	// if we are in circular mode just keep going
+	if (!adc->dma->circ)
+	{
+		// stop the DMA, and turn off continuous mode, we are done
+		SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
 
-	// stop continous mode
-	SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
+		// stop continous mode
+		SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
 
-	// reset the trigger source
-	SDADC_InitModeCmd(adc->base, ENABLE);
-	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
-	{}
-	SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
-	SDADC_InitModeCmd(adc->base, DISABLE);
+		// reset the trigger source
+		SDADC_InitModeCmd(adc->base, ENABLE);
+		while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+		{}
+		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+		SDADC_InitModeCmd(adc->base, DISABLE);
 
+	}
 	///@todo handle any overruns (we should really handle this in a isr
 	/// but for now we can just clear the flag and hope the dma still completes)
 	SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
-	
+
 	sys_leave_critical_section();
+
+	if (req->dma->isr_status & 2)
+		count = ch->count;
+	else if (ch->count & 0x01)
+		// if count is odd isr rounds up
+		count = (ch->count >> 1) + 1;
+	else
+		count = (ch->count >> 1);
 
 	cb = ch->complete;
 	if (cb)
-		cb(ch, ch->buf, ch->count, ch->complete_param);
+		cb(ch, ch->buf, count, ch->complete_param);
 }
 
 
@@ -186,25 +199,23 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 	{}
 
 	// setup the trigger that keeps the adc running count times, if no trigger is given
-	// we use continuous mode to trigger it count times
+	// we use continuous mode to trigger it count times .. we use the fast mode when
+	// continuous mode is set since we assume a single channel for trace atm
 	if (trigger)
 	{
 		SDADC_InjectedContinuousModeCmd(adc->base, !adc->trigger.cont);
 		SDADC_ExternalTrigInjectedConvConfig(adc->base, adc->trigger.source);
 		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, adc->trigger.type);
-		SDADC_FastConversionCmd(adc->base, ENABLE);
+		SDADC_FastConversionCmd(adc->base, !adc->trigger.cont);
 	}
 	else
 	{
-		// we have no trigger so use continuous mode with the dma, also set the
-		// fast bit since we are only doing 1 channel at a time (with the fast
-		// bit set we convert at SADC_CKL / 120, ie 
-		// SYS_CKL / (adc->sadc_clk_div * 120)
+		// we have no trigger so use continuous mode with the dma
 		SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
 		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
 		SDADC_FastConversionCmd(adc->base, ENABLE);
 	}
-	
+
 	// close init mode
 	SDADC_InitModeCmd(adc->base, DISABLE);
 	sys_leave_critical_section();
@@ -280,7 +291,7 @@ void adc_channel_init(adc_channel_t *channel)
 	struct adc_t *adc = channel->adc;
 	if (!adc->initalised)
 		adc_init(adc);
-	
+
 	// set analog input pin
 	gpio_init_pin(channel->pin);
 	gpio_init_pin(channel->pin_ref);

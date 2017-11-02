@@ -83,41 +83,73 @@ static void dma_clear_isr(dma_t *dma)
 	switch ((uint32_t)dma->stream)
 	{
 		case (uint32_t)DMA1_Stream0:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF0);
+			break;
 		case (uint32_t)DMA1_Stream1:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF1);
+			break;
 		case (uint32_t)DMA1_Stream2:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF2);
+			break;
 		case (uint32_t)DMA1_Stream3:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF3);
+			break;
 		case (uint32_t)DMA1_Stream4:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF4);
+			break;
 		case (uint32_t)DMA1_Stream5:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF5);
+			break;
 		case (uint32_t)DMA1_Stream6:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF6);
+			break;
 		case (uint32_t)DMA1_Stream7:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF7);
+			break;
 
 		case (uint32_t)DMA2_Stream0:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF0);
+			break;
 		case (uint32_t)DMA2_Stream1:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF1);
+			break;
 		case (uint32_t)DMA2_Stream2:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF2);
+			break;
 		case (uint32_t)DMA2_Stream3:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF3);
+			break;
 		case (uint32_t)DMA2_Stream4:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF4);
+			break;
 		case (uint32_t)DMA2_Stream5:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF5);
+			break;
 		case (uint32_t)DMA2_Stream6:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF6);
+			break;
 		case (uint32_t)DMA2_Stream7:
-			return DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+			DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF7);
+			break;
 		default:
 			///@todo error !
-			return;
+			break;
 	}
 }
 
@@ -129,11 +161,15 @@ static void dma_irq_handler(dma_t *dma)
 		///@todo interrupt for dma that is not enabled !
 		return;
 
-	DMA_ITConfig(dma->stream, DMA_IT_TC, DISABLE);
-	DMA_Cmd(dma->stream, DISABLE);
-
 	req = dma->reqs;
-	dma->reqs = NULL; // free the dma before complete so complete can sched another
+	if (!dma->circ)
+	{
+		DMA_ITConfig(dma->stream, DMA_IT_TC, DISABLE);
+		DMA_ITConfig(dma->stream, DMA_IT_HT, DISABLE);
+		DMA_Cmd(dma->stream, DISABLE);
+		dma->reqs = NULL; // free the dma before complete so complete can sched another
+	}
+
 	if (req->complete != NULL)
 		req->complete(req, req->complete_param);
 }
@@ -141,9 +177,12 @@ static void dma_irq_handler(dma_t *dma)
 void DMA1_Stream0_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[0];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF0))
+	dma->isr_status = (DMA1->LISR >> 0) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF0);
 		dma_irq_handler(dma);
 	}
 }
@@ -151,9 +190,12 @@ void DMA1_Stream0_IRQHandler(void)
 void DMA1_Stream1_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[1];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF1))
+	dma->isr_status = (DMA1->LISR >> 6) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF1);
 		dma_irq_handler(dma);
 	}
 }
@@ -161,9 +203,12 @@ void DMA1_Stream1_IRQHandler(void)
 void DMA1_Stream2_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[2];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF2))
+	dma->isr_status = (DMA1->LISR >> 16) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF2);
 		dma_irq_handler(dma);
 	}
 }
@@ -171,9 +216,12 @@ void DMA1_Stream2_IRQHandler(void)
 void DMA1_Stream3_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[3];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF3))
+	dma->isr_status = (DMA1->LISR >> 22) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF3);
 		dma_irq_handler(dma);
 	}
 }
@@ -181,9 +229,12 @@ void DMA1_Stream3_IRQHandler(void)
 void DMA1_Stream4_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[4];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF4))
+	dma->isr_status = (DMA1->HISR >> 0) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF4);
 		dma_irq_handler(dma);
 	}
 }
@@ -191,9 +242,12 @@ void DMA1_Stream4_IRQHandler(void)
 void DMA1_Stream5_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[5];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF5))
+	dma->isr_status = (DMA1->HISR >> 6) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF5);
 		dma_irq_handler(dma);
 	}
 }
@@ -201,9 +255,12 @@ void DMA1_Stream5_IRQHandler(void)
 void DMA1_Stream6_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[6];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF6))
+	dma->isr_status = (DMA1->HISR >> 16) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF6);
 		dma_irq_handler(dma);
 	}
 }
@@ -211,9 +268,12 @@ void DMA1_Stream6_IRQHandler(void)
 void DMA1_Stream7_IRQHandler(void)
 {
 	dma_t *dma = dma1_irq_list[7];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF7))
+	dma->isr_status = (DMA1->HISR >> 22) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF7);
 		dma_irq_handler(dma);
 	}
 }
@@ -221,9 +281,12 @@ void DMA1_Stream7_IRQHandler(void)
 void DMA2_Stream0_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[0];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF0))
+	dma->isr_status = (DMA2->LISR >> 0) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF0);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF0);
 		dma_irq_handler(dma);
 	}
 }
@@ -231,9 +294,12 @@ void DMA2_Stream0_IRQHandler(void)
 void DMA2_Stream1_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[1];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF1))
+	dma->isr_status = (DMA2->LISR >> 6) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF1);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF1);
 		dma_irq_handler(dma);
 	}
 }
@@ -241,9 +307,12 @@ void DMA2_Stream1_IRQHandler(void)
 void DMA2_Stream2_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[2];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF2))
+	dma->isr_status = (DMA2->LISR >> 16) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF2);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF2);
 		dma_irq_handler(dma);
 	}
 }
@@ -251,9 +320,12 @@ void DMA2_Stream2_IRQHandler(void)
 void DMA2_Stream3_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[3];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF3))
+	dma->isr_status = (DMA2->LISR >> 22) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF3);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF3);
 		dma_irq_handler(dma);
 	}
 }
@@ -261,9 +333,12 @@ void DMA2_Stream3_IRQHandler(void)
 void DMA2_Stream4_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[4];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF4))
+	dma->isr_status = (DMA2->HISR >> 0) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF4);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF4);
 		dma_irq_handler(dma);
 	}
 }
@@ -271,9 +346,12 @@ void DMA2_Stream4_IRQHandler(void)
 void DMA2_Stream5_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[5];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF5))
+	dma->isr_status = (DMA2->HISR >> 6) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF5);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF5);
 		dma_irq_handler(dma);
 	}
 }
@@ -281,9 +359,12 @@ void DMA2_Stream5_IRQHandler(void)
 void DMA2_Stream6_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[6];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF6))
+	dma->isr_status = (DMA2->HISR >> 16) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF6);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF6);
 		dma_irq_handler(dma);
 	}
 }
@@ -291,9 +372,12 @@ void DMA2_Stream6_IRQHandler(void)
 void DMA2_Stream7_IRQHandler(void)
 {
 	dma_t *dma = dma2_irq_list[7];
-	if (DMA_GetITStatus(dma->stream, DMA_IT_TCIF7))
+	dma->isr_status = (DMA2->HISR >> 22) & 0x3f;
+
+	if (dma->isr_status & 0x30)
 	{
 		DMA_ClearITPendingBit(dma->stream, DMA_IT_TCIF7);
+		DMA_ClearITPendingBit(dma->stream, DMA_IT_HTIF7);
 		dma_irq_handler(dma);
 	}
 }
@@ -359,6 +443,8 @@ void dma_request(dma_request_t *req)
 	{}
 	DMA_Init(dma->stream, &req->st_dma_init);
 	DMA_ITConfig(dma->stream, DMA_IT_TC, ENABLE);
+	if (dma->circ)
+		DMA_ITConfig(dma->stream, DMA_IT_HT, ENABLE);
 	DMA_Cmd(dma->stream, ENABLE);
 }
 

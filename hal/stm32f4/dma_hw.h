@@ -36,6 +36,8 @@ struct dma_t
 	uint32_t channel;
 	struct dma_request_t *reqs;
 	uint8_t preemption_priority;
+	uint32_t isr_status;
+	uint8_t circ;
 };
 
 #endif
