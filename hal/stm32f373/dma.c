@@ -69,29 +69,29 @@ static void dma_clear_gl(dma_t *dma)
 	switch ((uint32_t)dma->channel)
 	{
 		case (uint32_t)DMA1_Channel1:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL1);
+			return DMA_ClearITPendingBit(DMA1_IT_GL1);
 		case (uint32_t)DMA1_Channel2:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL2);
+			return DMA_ClearITPendingBit(DMA1_IT_GL2);
 		case (uint32_t)DMA1_Channel3:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL3);
+			return DMA_ClearITPendingBit(DMA1_IT_GL3);
 		case (uint32_t)DMA1_Channel4:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL4);
+			return DMA_ClearITPendingBit(DMA1_IT_GL4);
 		case (uint32_t)DMA1_Channel5:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL5);
+			return DMA_ClearITPendingBit(DMA1_IT_GL5);
 		case (uint32_t)DMA1_Channel6:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL6);
+			return DMA_ClearITPendingBit(DMA1_IT_GL6);
 		case (uint32_t)DMA1_Channel7:
-    		return DMA_ClearITPendingBit(DMA1_IT_GL7);
+			return DMA_ClearITPendingBit(DMA1_IT_GL7);
 		case (uint32_t)DMA2_Channel1:
-    		return DMA_ClearITPendingBit(DMA2_IT_GL1);
+			return DMA_ClearITPendingBit(DMA2_IT_GL1);
 		case (uint32_t)DMA2_Channel2:
-    		return DMA_ClearITPendingBit(DMA2_IT_GL2);
+			return DMA_ClearITPendingBit(DMA2_IT_GL2);
 		case (uint32_t)DMA2_Channel3:
-    		return DMA_ClearITPendingBit(DMA2_IT_GL3);
+			return DMA_ClearITPendingBit(DMA2_IT_GL3);
 		case (uint32_t)DMA2_Channel4:
-    		return DMA_ClearITPendingBit(DMA2_IT_GL4);
+			return DMA_ClearITPendingBit(DMA2_IT_GL4);
 		case (uint32_t)DMA2_Channel5:
-    		return DMA_ClearITPendingBit(DMA2_IT_GL5);
+			return DMA_ClearITPendingBit(DMA2_IT_GL5);
 		default:
 			///@todo error !
 			return;
@@ -106,120 +106,160 @@ static void dma_irq_handler(dma_t *dma)
 		///@todo interrupt for dma that is not enabled !
 		return;
 
-	DMA_ITConfig(dma->channel, DMA_IT_TC, DISABLE);
-	DMA_Cmd(dma->channel, DISABLE);
-
 	req = dma->reqs;
-	dma->reqs = NULL; // free the dma before complete so complete can sched another
+	if (!dma->circ)
+	{
+		DMA_ITConfig(dma->channel, DMA_IT_TC, DISABLE);
+		DMA_ITConfig(dma->channel, DMA_IT_HT, DISABLE);
+		DMA_Cmd(dma->channel, DISABLE);
+		dma->reqs = NULL; // free the dma before complete so complete can sched another
+	}
+
 	if (req->complete != NULL)
 		req->complete(req, req->complete_param);
 }
 
 void DMA1_Channel1_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC1))
+	dma_t *dma = dma1_irq_list[0];
+	dma->isr_status = (DMA1->ISR >> 0) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
-    	DMA_ClearITPendingBit(DMA1_IT_GL1);
-		dma_irq_handler(dma1_irq_list[0]);
+		DMA_ClearITPendingBit(DMA1_IT_GL1);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel2_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC2))
+	dma_t *dma = dma1_irq_list[1];
+	dma->isr_status = (DMA1->ISR >> 4) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL2);
-		dma_irq_handler(dma1_irq_list[1]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel3_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC3))
+	dma_t *dma = dma1_irq_list[2];
+	dma->isr_status = (DMA1->ISR >> 8) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL3);
-		dma_irq_handler(dma1_irq_list[2]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel4_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC4))
+	dma_t *dma = dma1_irq_list[3];
+	dma->isr_status = (DMA1->ISR >> 12) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL4);
-		dma_irq_handler(dma1_irq_list[3]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel5_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC5))
+	dma_t *dma = dma1_irq_list[4];
+	dma->isr_status = (DMA1->ISR >> 16) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL5);
-		dma_irq_handler(dma1_irq_list[4]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel6_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC6))
+	dma_t *dma = dma1_irq_list[5];
+	dma->isr_status = (DMA1->ISR >> 20) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL6);
-		dma_irq_handler(dma1_irq_list[5]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA1_Channel7_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA1_IT_TC7))
+	dma_t *dma = dma1_irq_list[6];
+	dma->isr_status = (DMA1->ISR >> 24) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA1_IT_GL7);
-		dma_irq_handler(dma1_irq_list[6]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA2_Channel1_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA2_IT_TC1))
+	dma_t *dma = dma2_irq_list[0];
+	dma->isr_status = (DMA2->ISR >> 0) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA2_IT_GL1);
-		dma_irq_handler(dma2_irq_list[0]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA2_Channel2_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA2_IT_TC2))
+	dma_t *dma = dma2_irq_list[1];
+	dma->isr_status = (DMA2->ISR >> 4) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA2_IT_GL2);
-		dma_irq_handler(dma2_irq_list[1]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA2_Channel3_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA2_IT_TC3))
+	dma_t *dma = dma2_irq_list[2];
+	dma->isr_status = (DMA2->ISR >> 8) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA2_IT_GL3);
-		dma_irq_handler(dma2_irq_list[2]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA2_Channel4_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA2_IT_TC4))
+	dma_t *dma = dma2_irq_list[3];
+	dma->isr_status = (DMA2->ISR >> 12) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA2_IT_GL4);
-		dma_irq_handler(dma2_irq_list[3]);
+		dma_irq_handler(dma);
 	}
 }
 
 void DMA2_Channel5_IRQHandler(void)
 {
-	if(DMA_GetITStatus(DMA2_IT_TC5))
+	dma_t *dma = dma2_irq_list[4];
+	dma->isr_status = (DMA2->ISR >> 16) & 0x0f;
+
+	if (dma->isr_status & 0x01)
 	{
 		DMA_ClearITPendingBit(DMA2_IT_GL5);
-		dma_irq_handler(dma2_irq_list[4]);
+		dma_irq_handler(dma);
 	}
 }
 
@@ -277,6 +317,8 @@ void dma_request(dma_request_t *req)
 	DMA_Init(dma->channel, &req->st_dma_init);
 	dma_clear_gl(dma);
 	DMA_ITConfig(dma->channel, DMA_IT_TC, ENABLE);
+	if (dma->circ)
+		DMA_ITConfig(dma->channel, DMA_IT_HT, ENABLE);
 	DMA_Cmd(dma->channel, ENABLE);
 }
 
@@ -291,6 +333,8 @@ void dma_cancel(dma_t *dma)
 	if (dma == NULL)
 		return;
 
+	DMA_ITConfig(dma->channel, DMA_IT_TC, DISABLE);
+	DMA_ITConfig(dma->channel, DMA_IT_HT, DISABLE);
 	DMA_Cmd(dma->channel, DISABLE);
 	dma_clear_gl(dma);
 	dma->reqs = NULL;

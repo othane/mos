@@ -29,6 +29,7 @@ struct adc_t
 	dma_t *dma;				///< link to dma, trace requires dma for this module
 	struct
 	{
+		uint8_t sync_adc1;	///< start this adc with adc 1 start (different from below)
 		uint32_t type;		///< trigger type see SDADC_external_trigger_edge_for_injected_channels_conversion 
 		uint32_t source;	///< trigger source see SDADC_ExternalTrigger_sources
 		uint32_t cont;		///< 0 to trigger on first event and let it run, otherwise this requires a trigger for each sample [ie count triggers] (for some reason this only seems to work up till about 12KHz, not 16.66-50KHz as expected)
@@ -42,12 +43,12 @@ struct adc_t
 // internal representation of a adc channel
 struct adc_channel_t
 {
-	adc_t *adc;
-	uint32_t number;
+	adc_t *adc;				///< parent adc
+	uint32_t number;		///< which channel is this adc @ref SDADC_Channel
 	uint32_t conf;
-	gpio_pin_t *pin;		// input pin
-	gpio_pin_t *pin_ref;	// in differential mode use this pin as the - and pin as the +, else NULL
-	
+	gpio_pin_t *pin;		///< input pin
+	gpio_pin_t *pin_ref;	///< in differential mode use this pin as the - and pin as the +, else NULL
+
 	adc_trace_complete_t complete;
 	void *complete_param;
 	volatile int16_t *buf;

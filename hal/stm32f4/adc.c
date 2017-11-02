@@ -92,7 +92,7 @@ static void adc_dma_cfg(adc_t *adc, dma_request_t *dma_req, void *buf, int count
 		adc_cfg->DMA_MemoryInc = DMA_MemoryInc_Disable;
 	}
 	adc_cfg->DMA_PeripheralInc = DMA_PeripheralInc_Disable;
-	adc_cfg->DMA_Mode = DMA_Mode_Normal;
+	adc_cfg->DMA_Mode = adc->dma->circ? DMA_Mode_Circular: DMA_Mode_Normal;
 	adc_cfg->DMA_Priority = DMA_Priority_High;
 	adc_cfg->DMA_FIFOMode = DMA_FIFOMode_Disable;
 	adc_cfg->DMA_MemoryBurst = DMA_MemoryBurst_Single;
@@ -107,29 +107,46 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 	adc_channel_t *ch = (adc_channel_t *)param;
 	adc_t * adc = ch->adc;
 	adc_trace_complete_t cb;
-	ADC_InitTypeDef init =
-	{
-		.ADC_Resolution = ADC_Resolution_12b,
-		.ADC_ScanConvMode = DISABLE,
-		.ADC_ContinuousConvMode = DISABLE,
-		.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None,
-		.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1, // this is dont care if ext trig is disable above
-		.ADC_DataAlign = ADC_DataAlign_Right,
-		.ADC_NbrOfConversion = 1,
-	};
+	int count;
 
 	sys_enter_critical_section();
 
-	// stop the DMA, then disable continuous mode, and disable the external
-	// trigger so we dont get set off again
-	ADC_DMACmd(adc->base, DISABLE);
-	ADC_Init(adc->base, &init);
+	// if we are in circular mode just keep going
+	if (!adc->dma->circ)
+	{
+		ADC_InitTypeDef init =
+		{
+			.ADC_Resolution = ADC_Resolution_12b,
+			.ADC_ScanConvMode = DISABLE,
+			.ADC_ContinuousConvMode = DISABLE,
+			.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None,
+			.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1, // this is dont care if ext trig is disable above
+			.ADC_DataAlign = ADC_DataAlign_Right,
+			.ADC_NbrOfConversion = 1,
+		};
+
+		// stop the DMA, then disable continuous mode, and disable the external
+		// trigger so we dont get set off again
+		ADC_DMACmd(adc->base, DISABLE);
+		ADC_Init(adc->base, &init);
+	}
 
 	sys_leave_critical_section();
 
+	if (req->dma->isr_status & 0x20)
+		count = ch->count;
+	else if (req->dma->isr_status & 0x10)
+	{
+		if (ch->count & 0x01)
+			// if count is odd isr rounds up
+			count = (ch->count >> 1) + 1;
+		else
+			count = (ch->count >> 1);
+	}
+
 	cb = ch->complete;
 	if (cb)
-		cb(ch, ch->buf, ch->count, ch->complete_param);
+		cb(ch, ch->buf, count, ch->complete_param);
 }
 
 
@@ -179,6 +196,7 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 
 	// init the adc
 	ADC_Init(adc->base, &init);
+	ADC_DMARequestAfterLastTransferCmd(adc->base, ENABLE);
 
 	// init the adc channel as the only channel (we dont support sequences atm
 	// we just do the one channel _count_ times)
