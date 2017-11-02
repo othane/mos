@@ -76,6 +76,10 @@ static void adc_init(adc_t *adc)
 	SDADC_AINInit(adc->base, SDADC_Conf_0, &adc->SDADC_AINStructure[0]);
 	SDADC_AINInit(adc->base, SDADC_Conf_1, &adc->SDADC_AINStructure[1]);
 	SDADC_AINInit(adc->base, SDADC_Conf_2, &adc->SDADC_AINStructure[2]);
+
+	// option to allow adc's to be sync'ed
+	SDADC_InjectedSynchroSDADC1(adc->base, adc->trigger.sync_adc1);
+
 	SDADC_InitModeCmd(adc->base, DISABLE);
 
 	// calibrate
@@ -85,9 +89,6 @@ static void adc_init(adc_t *adc)
 	{}
 	SDADC_ClearFlag(adc->base, SDADC_FLAG_EOCAL);
 
-	// option to allow adc's to be sync'ed 
-	///@todo if (adc->sync_adc1) {SDADC_InjectedSynchroSDADC1(adc->base)}
-	
 	adc->initalised = true;
 }
 
