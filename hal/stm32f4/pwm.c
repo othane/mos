@@ -112,7 +112,7 @@ void pwm_set_duty(pwm_channel_t *pwm, float duty)
 }
 
 
-uint32_t pwm_set_freq(pwm_channel_t *pwm, uint32_t freq)
+float pwm_set_freq(pwm_channel_t *pwm, float freq)
 {
 	freq = tmr_set_freq(pwm->tmr, freq);
 	// note the duty will be updated from the pwm_update_duty_on_freq_change below by the tmr
@@ -126,6 +126,12 @@ static void pwm_update_duty_on_freq_change(tmr_t *tmr, int ch, void *param)
 
 	// update this channels duty for the new timer freq
 	pwm_set_duty(pwm, pwm->duty);
+}
+
+
+void pwm_sync_cfg(pwm_channel_t *pwm, uint8_t ext_clk_mode, uint8_t sync_mode)
+{
+	return tmr_sync_cfg(pwm->tmr, ext_clk_mode, sync_mode);
 }
 
 
