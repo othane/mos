@@ -129,6 +129,8 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 		// trigger so we dont get set off again
 		ADC_DMACmd(adc->base, DISABLE);
 		ADC_Init(adc->base, &init);
+		ADC_GetConversionValue(adc->base); // clear EOC flag in case of overrun
+		ADC_ClearFlag(adc->base, ADC_FLAG_OVR);
 	}
 
 	sys_leave_critical_section();
@@ -150,7 +152,7 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 }
 
 
-void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger, adc_trace_complete_t cb, void *param)
+void adc_trace(adc_channel_t *ch, uint16_t *dst, int count, int trigger, adc_trace_complete_t cb, void *param)
 {
 	adc_t *adc = ch->adc;
 	ADC_InitTypeDef init =
@@ -196,7 +198,7 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 
 	// init the adc
 	ADC_Init(adc->base, &init);
-	ADC_DMARequestAfterLastTransferCmd(adc->base, ENABLE);
+	ADC_DMARequestAfterLastTransferCmd(adc->base, ENABLE);   ///@todo it would be better to change this to DISABLE if not in circ mode (atm we just clear the OVR flag)
 
 	// init the adc channel as the only channel (we dont support sequences atm
 	// we just do the one channel _count_ times)
@@ -221,10 +223,10 @@ int32_t adc_read(adc_channel_t *ch)
 		.ADC_ScanConvMode = DISABLE,
 		.ADC_ContinuousConvMode = DISABLE,
 		.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None,
-		.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1, // this is dont care if ext trig is disable above
 		.ADC_DataAlign = ADC_DataAlign_Right,
 		.ADC_NbrOfConversion = 1,
 	};
+	ADC_DMACmd(adc->base, DISABLE);
 	ADC_Init(adc->base, &init);
 
 	// init the adc channel as the only channel

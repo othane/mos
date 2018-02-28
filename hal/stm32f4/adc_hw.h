@@ -49,7 +49,7 @@ struct adc_channel_t
 
 	adc_trace_complete_t complete;
 	void *complete_param;
-	volatile int16_t *buf;
+	uint16_t *buf;
 	int count;
 };
 

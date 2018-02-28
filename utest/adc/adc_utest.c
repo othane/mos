@@ -14,40 +14,29 @@
 #include <string.h>
 #include <hal.h>
 
-volatile uint16_t buf[4096];
-volatile uint32_t val = 0;
-
-volatile void *vmemset(volatile void *s, int8_t c, size_t n)
-{
-	volatile unsigned char *p = s;
-	while (n--)
-		*p++ = (unsigned char)c;
-	return s;
-}
+adc_trace_point_t buf[4096];
+uint32_t val = 0;
 
 void init(void)
 {
 	sys_init();
 	adc_channel_init(adc_chan);
-	vmemset(buf, 0x00, sizeof(buf));
+	memset((void *)buf, 0x00, sizeof(buf));
 }
 
-void adc_handle_buffer(volatile uint16_t *dst, int len)
+void adc_handle_buffer(adc_trace_point_t *dst, int len)
 {
 	sys_nop();
 }
 
-void adc_complete(adc_channel_t *ch, volatile int16_t *dst, int len, void *param)
+void adc_complete(adc_channel_t *ch, adc_trace_point_t *dst, int len, void *param)
 {
-	int n;
-	for (n=0; n < len; n++)
-		buf[n] += 32767;
-
 	val = adc_read(ch);
-	adc_handle_buffer((volatile uint16_t *)dst, len);
+	adc_handle_buffer((adc_trace_point_t *)dst, len);
 
-	vmemset(buf, 0x00, sizeof(buf));
-	adc_trace(ch, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, param);
+	memset((void *)buf, 0x00, sizeof(buf));
+	val = adc_read(ch);
+	adc_trace(ch, (adc_trace_point_t *)buf, sizeof(buf)/sizeof(adc_trace_point_t), 0, adc_complete, param);
 }
 
 int main(void)
@@ -55,7 +44,7 @@ int main(void)
 	init();
 
 	val = adc_read(adc_chan);
-	adc_trace(adc_chan, (volatile int16_t *)buf, sizeof(buf)/sizeof(uint16_t), 0, adc_complete, NULL);
+	adc_trace(adc_chan, (adc_trace_point_t *)buf, sizeof(buf)/sizeof(adc_trace_point_t), 0, adc_complete, NULL);
 	while (1)
 	{}
 
