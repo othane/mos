@@ -16,5 +16,12 @@
 
 extern adc_channel_t *adc_chan;
 
+
+#ifdef STM32F37X
+typedef volatile int16_t adc_trace_point_t;
+#else
+typedef uint16_t adc_trace_point_t;
+#endif
+
 #endif
 
