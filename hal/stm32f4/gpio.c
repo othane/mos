@@ -408,6 +408,8 @@ void gpio_init_pin(gpio_pin_t *pin)
 			break;
 		}
 	}
+
+	pin->initialised = 1;
 }
 
 
@@ -458,13 +460,13 @@ void gpio_set_pin(gpio_pin_t *pin, uint8_t state)
 		case 'Z':
 		case 'z':
 			// set the pin to floating by switching to an input
-			if (moder != GPIO_Mode_IN)
+			if (moder != GPIO_Mode_IN && pin->initialised)
 				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
 			break;
 		case 1:
 			// set hi & ensure we are configured as a output
 			pin->port->BSRRL = (uint16_t)(pin->cfg.GPIO_Pin & 0xffff);
-			if (moder != GPIO_Mode_OUT)
+			if (moder != GPIO_Mode_OUT && pin->initialised)
 			{
 				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
 				pin->port->MODER |= GPIO_Mode_OUT << 2*pin->pos;
@@ -474,7 +476,7 @@ void gpio_set_pin(gpio_pin_t *pin, uint8_t state)
 		default:
 			// set lo & ensure we are configured as a output
 			pin->port->BSRRH = (uint16_t)(pin->cfg.GPIO_Pin & 0xffff);
-			if (moder != GPIO_Mode_OUT)
+			if (moder != GPIO_Mode_OUT && pin->initialised)
 			{
 				pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
 				pin->port->MODER |= GPIO_Mode_OUT << 2*pin->pos;
