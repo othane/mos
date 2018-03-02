@@ -28,6 +28,7 @@ struct gpio_pin_t
 	void *falling_cb_param;         ///< passed to falling cb
 	uint8_t preemption_priority;    ///< lower is a higher priority
 	uint8_t pos;
+	uint8_t initialised;
 };
 
 
