@@ -33,6 +33,7 @@
 #include "tmr.h"
 #include "pwm.h"
 #include "ppm.h"
+#include "usb.h"
 #include "bootstrap.h"
 
 #ifndef NOHW_H
