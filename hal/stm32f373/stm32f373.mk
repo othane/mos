@@ -50,7 +50,7 @@ OPENOCD_ERASE_CMDS = ''
 OPENOCD_ERASE_CMDS += -c 'reset halt'
 OPENOCD_ERASE_CMDS += -c 'sleep 10'
 OPENOCD_ERASE_CMDS += -c 'sleep 10'
-OPENOCD_FLASH_CMDS += -c 'stm32f1x unlock 0'
+OPENOCD_ERASE_CMDS += -c 'stm32f1x unlock 0'
 OPENOCD_ERASE_CMDS += -c 'stm32f1x mass_erase 0'
 OPENOCD_ERASE_CMDS += -c shutdown
 export OPENOCD_ERASE_CMDS
