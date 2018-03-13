@@ -154,7 +154,6 @@ void tmr_sync_cfg(struct tmr_t *tmr, uint8_t ext_clk_mode, uint8_t sync_mode)
 	tmr->sync.ext_clk_mode = ext_clk_mode;
 
 	TIM_SelectSlaveMode(tmr->tim, slave_mode); // set SMS bits
-	tmr->sync.slave_mode = slave_mode;
 }
 
 
