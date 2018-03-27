@@ -75,5 +75,20 @@ void gpio_toggle_pin(gpio_pin_t *pin);
  */
 bool gpio_get_pin(gpio_pin_t *pin);
 
+// Pull-up setting
+typedef enum
+{
+    GPIO_NO_PULL = 0,
+    GPIO_PULL_UP = 1,
+    GPIO_PULL_DOWN = 2
+} gpio_pull_type_t;
+
+/**
+ * @brief Set the pull-up configuration for a GPIO pin
+ * @param pin the pin from gpio_init_pin to toggle
+ * @param pull the pull-up setting, either GPIO_NO_PULL,
+ *    GPIO_PULL_UP, or GPIO_PULL_DOWN
+ */
+void gpio_set_pull(gpio_pin_t *pin, gpio_pull_type_t pull);
 
 #endif
