@@ -19,7 +19,7 @@
 #define MIN(a,b) ((a<b)?a:b)
 
 
-static uart_t *uart_irq_list[3] = {NULL,};  ///< just store the uart handle so we can get it in the irq (then hw.c is more free form)
+static uart_t *uart_irq_list[5] = {NULL,};  ///< just store the uart handle so we can get it in the irq (then hw.c is more free form)
 static uint8_t uart_irq(uart_t *uart)
 {
 	switch ((uint32_t)uart->channel)
@@ -33,6 +33,12 @@ static uint8_t uart_irq(uart_t *uart)
 		case (uint32_t)USART3:
 			uart_irq_list[2] = uart;
 			return USART3_IRQn;
+		case (uint32_t)UART4:
+			uart_irq_list[3] = uart;
+			return UART4_IRQn;
+		case (uint32_t)UART5:
+			uart_irq_list[4] = uart;
+			return UART5_IRQn;
 		default:
 			///@todo error
 			return 0x00;
@@ -203,6 +209,14 @@ void USART3_IRQHandler(void)
 	uart_irq_handler(uart_irq_list[2]);
 }
 
+void UART4_IRQHandler(void)
+{
+	uart_irq_handler(uart_irq_list[3]);
+}
+void UART5_IRQHandler(void)
+{
+	uart_irq_handler(uart_irq_list[4]);
+}
 
 #define UART_DMA_DIR_RX 0
 #define UART_DMA_DIR_TX 1
@@ -377,6 +391,12 @@ void uart_init(uart_t *uart)
 			break;
 		case (uint32_t)USART3:
 			RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
+			break;
+		case (uint32_t)UART4:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, ENABLE);
+			break;
+		case (uint32_t)UART5:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5, ENABLE);
 			break;
 	}
 
