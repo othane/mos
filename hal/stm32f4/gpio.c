@@ -535,3 +535,9 @@ bool gpio_get_pin(gpio_pin_t *pin)
 	return ((pin->port->IDR & pin->cfg.GPIO_Pin) != 0);
 }
 
+void gpio_set_pull(gpio_pin_t *pin, gpio_pull_type_t pull)
+{
+    // Note: This only works if gpio_pull_type_t and GPIOPuPd_TypeDef have
+    // matching values for each setting.
+    pin->port->PUPDR = (pin->port->PUPDR & (~(3 << (pin->pos * 2)))) | (pull << (pin->pos * 2));
+}
