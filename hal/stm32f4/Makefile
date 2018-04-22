@@ -32,6 +32,12 @@ SRC  = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.c \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dbgmcu.c \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_usart.c \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_core.c \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_ioreq.c \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_req.c \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_OTG_Driver/src/usb_core.c \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_OTG_Driver/src/usb_dcd.c	\
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_OTG_Driver/src/usb_dcd_int.c \
 	./syscalls.c \
 	./nvm.c \
 	./crc.c \
@@ -39,6 +45,7 @@ SRC  = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/
 	./spi.c \
 	./sys.c
 
+	
 # these files are only included when configured ... this is because they implement isr's and gcc cannot 
 # know that you aren't going to call these so it includes everything, and this can blow your code size ...
 # so by using the flags you can remove the overhead easily
@@ -51,6 +58,7 @@ SRC-$(CONFIG_TMR) += ./tmr.c
 SRC-$(CONFIG_PWM) += ./pwm.c ./tmr.c
 SRC-$(CONFIG_PPM) += ./ppm.c ./tmr.c
 SRC-$(CONFIG_UART) += ./uart.c
+SRC-$(CONFIG_USB) += ./usb.c
 
 ASRC = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/Source/Templates/gcc_ride7/startup_stm32f40xx.s
 

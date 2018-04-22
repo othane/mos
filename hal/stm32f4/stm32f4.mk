@@ -14,7 +14,7 @@ export GDB = $(CROSS_COMPILE)gdb
 MCU = cortex-m4
 FPU = -mfloat-abi=hard -mfpu=fpv4-sp-d16 -D__FPU_USED=1 -D__FPU_PRESENT=1 -DARM_MATH_CM4
 DEFS = -DUSE_STDPERIPH_DRIVER -DSTM32F40_41xxx -DRUN_FROM_FLASH=1 -DHSE_VALUE=8000000
-OPT ?= -O0 
+OPT ?= -O0
 MCFLAGS = -mthumb -mcpu=$(MCU) $(FPU)
 
 export ASFLAGS  = $(MCFLAGS) $(OPT) -g -gdwarf-2 $(ADEFS)
@@ -28,14 +28,16 @@ export LDFLAGS  = $(MCFLAGS) -nostartfiles -Wl,--cref,--gc-sections,--no-warn-mi
 HINCDIR += ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Include/ \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/Include/ \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/inc/ \
-	./
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/inc/ \
+	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_OTG_Driver/inc/ \
+	./	
 export INCDIR = $(patsubst %,$(SELF_DIR)%,$(HINCDIR))
 
 
 # openocd variables and targets
 OPENOCD_PATH ?= /usr/local/share/openocd/
 export OPENOCD_BIN = openocd
-export OPENOCD_INTERFACE ?= $(OPENOCD_PATH)/scripts/interface/stlink-v2.cfg
+export OPENOCD_INTERFACE ?= $(OPENOCD_PATH)/scripts/interface/stlink-v2-1.cfg
 export OPENOCD_TARGET = $(OPENOCD_PATH)/scripts/target/stm32f4x.cfg
 
 OPENOCD_FLASH_CMDS = ''
