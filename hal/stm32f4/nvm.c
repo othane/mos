@@ -65,8 +65,15 @@ uint32_t nvm_erase(void *addr, uint32_t len)
 	{
 		if (sector_addr >= addr_start && sector_addr < addr_end)
 		{
-			erase(n);
-			bytes_erased += sector_size[n];
+			if (erase(n))
+			{
+			    bytes_erased += sector_size[n];
+			}
+			else
+			{
+			    // Erase failed
+			    break;
+			}
 		}
 		sector_addr += sector_size[n];
 	}
