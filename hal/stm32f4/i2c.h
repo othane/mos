@@ -107,4 +107,13 @@ void i2c_cancel_read(i2c_t *i2c);
  */
 i2c_error_code_t i2c_last_error(i2c_t *i2c);
 
+#ifdef I2C_TEST_READ_CS43L22
+/**
+ * @brief Test the I2C driver in master mode by reading
+ *  the CS43L22 CHIP register on the Discovery board.
+ * @param i2c i2c device
+ */
+bool i2c_test_readCS43L22(void);
+#endif
+
 #endif

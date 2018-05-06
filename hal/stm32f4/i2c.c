@@ -26,8 +26,12 @@ typedef enum
     I2C_STATE_BUSY_RX,          // Reading data
     I2C_STATE_BUSY_RX_STOP,     // Slave waiting for stop when reading data
     I2C_STATE_COMPLETE,         // Read or write complete
-    I2C_STATE_ERROR             // Read or write failed
+    I2C_STATE_ERROR,            // Read or write failed
+    I2C_STATE_WRITE_CALLED,
+    I2C_STATE_READ_CALLED,
 } i2c_state_t;
+
+#define I2C_EVENT_TRACE
 
 #ifdef I2C_EVENT_TRACE
 
@@ -204,6 +208,14 @@ static void i2c_error_irq_handler(i2c_t *i2c)
     }
 }
 
+// Report an invalid event and cancel the transaction
+static void i2c_invalid_event(i2c_t *i2c)
+{
+    i2c->state = I2C_STATE_ERROR;
+    i2c->error_code = I2C_ERROR_INVEVNT;
+    i2c_error(i2c);
+}
+
 // Address sent or received event
 static void i2c_address_event(i2c_t *i2c)
 {
@@ -219,16 +231,21 @@ static void i2c_address_event(i2c_t *i2c)
             // NACK after the first and only byte
             I2C_AcknowledgeConfig(i2c->channel, DISABLE);
         }
+        // Enable the interrupt on TXE/RXE
+        I2C_ITConfig(i2c->channel, I2C_IT_BUF, ENABLE);
     }
     else if (i2c->state == I2C_STATE_BUSY_TX_ADDRESS)
     {
         // Write
         i2c->state = I2C_STATE_BUSY_TX;
+        // Enable the interrupt on TXE/RXE
+        I2C_ITConfig(i2c->channel, I2C_IT_BUF, ENABLE);
     }
 
     // Clear I2C_FLAG_ADDR
-    __attribute__((__unused__)) uint32_t temp_reg = hi2c->SR1;
+    uint32_t temp_reg = hi2c->SR1;
     temp_reg = (hi2c->SR2 << 16);
+    (void)temp_reg;
 }
 
 // Handle an interrupt when I2C_FLAG_TRA is set
@@ -236,38 +253,30 @@ static void i2c_transmit_event(i2c_t *i2c, uint32_t sr1, uint32_t cr2)
 {
     I2C_TypeDef *hi2c = i2c->channel;
 
-    if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
-        || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
+    if (i2c->state == I2C_STATE_BUSY_TX)
     {
-        // Transmit buffer empty and/or last byte sent
-        if (i2c->state == I2C_STATE_BUSY_TX)
+        if (i2c->write_count >= i2c->write_buf_len)
         {
-            if (i2c->write_count >= i2c->write_buf_len)
+            // All data sent
+            if (i2c->master)
             {
-                // All data sent
-                if (i2c->master)
-                {
-                    // Generate a stop if we are master
-                    hi2c->CR1 |= I2C_CR1_STOP;
-                }
-                i2c->state = I2C_STATE_COMPLETE;
-                // Call the callback
-                i2c_tx_complete(i2c, i2c->write_count);
+                // Generate a stop if we are master
+                hi2c->CR1 |= I2C_CR1_STOP;
             }
-            else
-            {
-                // More data to send
-                hi2c->DR = i2c->write_buf[i2c->write_count++];
-            }
+            i2c->state = I2C_STATE_COMPLETE;
+            // Call the callback
+            i2c_tx_complete(i2c, i2c->write_count);
+        }
+        else
+        {
+            // More data to send
+            hi2c->DR = i2c->write_buf[i2c->write_count++];
         }
     }
     else
     {
-        // We shouldn't be transmitting - abort the transaction
-        i2c->state = I2C_STATE_ERROR;
-        i2c->error_code = I2C_ERROR_INVEVNT;
-        i2c_error(i2c);
-        return;
+        // We shouldn't be transmitting
+        i2c_invalid_event(i2c);
     }
 }
 
@@ -302,6 +311,8 @@ static void i2c_receive_event(i2c_t *i2c, uint32_t sr1)
                 {
                     // Wait for the stop
                     i2c->state = I2C_STATE_BUSY_RX_STOP;
+                    // Disable the TXE/RXE interrupt
+                    I2C_ITConfig(i2c->channel, I2C_IT_BUF, DISABLE);
                 }
                 break;
             }
@@ -316,8 +327,8 @@ static void i2c_receive_event(i2c_t *i2c, uint32_t sr1)
     }
 }
 
-// Stop detected in slave mode
-static void i2c_slave_stop_received(i2c_t *i2c)
+// Stop detected
+static void i2c_stop_event(i2c_t *i2c)
 {
     I2C_TypeDef *hi2c = i2c->channel;
 
@@ -326,6 +337,13 @@ static void i2c_slave_stop_received(i2c_t *i2c)
     uint32_t temp_reg = hi2c->SR1;
     (void)temp_reg;
     hi2c->CR1 |= I2C_CR1_PE;
+
+    if (i2c->master)
+    {
+        // We shouldn't get this event in master mode
+        i2c_invalid_event(i2c);
+        return;
+    }
 
     if (i2c->state == I2C_STATE_BUSY_TX)
     {
@@ -358,6 +376,44 @@ static void i2c_slave_stop_received(i2c_t *i2c)
     // else - probably a stop after an ack from the previous transaction.
 }
 
+static void i2c_start_event(i2c_t *i2c)
+{
+    I2C_TypeDef *hi2c = i2c->channel;
+    uint32_t sr1;
+
+    // A start condition should only be seen in master mode
+    if (i2c->master)
+    {
+        // Master mode
+
+        // The SB flag is cleared when you read SR1 followed by a write to DR.
+        sr1 = hi2c->SR1;
+        (void)sr1;
+        if (i2c->state == I2C_STATE_BUSY_START_TX)
+        {
+            // Send the slave write address
+            hi2c->DR = i2c->slave_address & 0xFE;
+            i2c->state = I2C_STATE_BUSY_TX_ADDRESS;
+        }
+        else if (i2c->state == I2C_STATE_BUSY_START_RX)
+        {
+            // Send the slave read address and clear the SB flag
+            hi2c->DR = i2c->slave_address | 1;
+            i2c->state = I2C_STATE_BUSY_RX_ADDRESS;
+        }
+        else
+        {
+            // Invalid state for this event
+            i2c_invalid_event(i2c);
+        }
+    }
+    else
+    {
+        // Cancel the transaction - invalid event for slave mode
+        i2c_invalid_event(i2c);
+    }
+}
+
 static void i2c_irq_handler(i2c_t *i2c)
 {
     if (!i2c)
@@ -388,49 +444,30 @@ static void i2c_irq_handler(i2c_t *i2c)
     {
         i2c_address_event(i2c);
     }
-    if (sr2 & I2C_FLAG_TRA)
+    //if (sr2 & I2C_FLAG_TRA)
     {
         // Transmitting
-        i2c_transmit_event(i2c, sr1, cr2);
-    }
-    else
-    {
-        // Receiving
-        if ((sr1 & I2C_FLAG_RXNE) && (cr2 & I2C_IT_BUF))
+        if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
+            || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
         {
-            // Read the next byte
-            i2c_receive_event(i2c, sr1);
+            // Transmit event
+            i2c_transmit_event(i2c, sr1, cr2);
         }
     }
-
-    if (i2c->master)
+    if ((sr1 & I2C_FLAG_RXNE) && (cr2 & I2C_IT_BUF))
     {
-        // Master mode
-        if ((sr1 & I2C_FLAG_SB) && (cr2 & I2C_IT_EVT))
-        {
-            // Start bit has been sent
-            if (i2c->state == I2C_STATE_BUSY_START_TX)
-            {
-                // Send the slave write address
-                hi2c->DR = i2c->slave_address & 0xFE;
-                i2c->state = I2C_STATE_BUSY_TX_ADDRESS;
-            }
-            else if (i2c->state == I2C_STATE_BUSY_START_RX)
-            {
-                // Send the slave read address
-                hi2c->DR = i2c->slave_address | 1;
-                i2c->state = I2C_STATE_BUSY_RX_ADDRESS;
-            }
-        }
+        // Receive event
+        i2c_receive_event(i2c, sr1);
     }
-    else
+    if ((sr1 & I2C_FLAG_SB) && (cr2 & I2C_IT_EVT))
     {
-        // Slave mode
-        if ((sr1 & I2C_FLAG_STOPF) && (cr2 & I2C_IT_EVT))
-        {
-            // STOP received
-            i2c_slave_stop_received(i2c);
-        }
+        // Start bit
+        i2c_start_event(i2c);
+    }
+    if ((sr1 & I2C_FLAG_STOPF) && (cr2 & I2C_IT_EVT))
+    {
+        // STOP received
+        i2c_stop_event(i2c);
     }
 }
 
@@ -471,6 +508,21 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         return -3;
     }
 
+#ifdef I2C_EVENT_TRACE
+    I2C_TypeDef *hi2c = i2c->channel;
+    uint32_t sr2 = (hi2c->SR2 << 16);
+    uint32_t sr1 = hi2c->SR1;
+
+    event_log[next_fr_entry].state = I2C_STATE_READ_CALLED;
+    event_log[next_fr_entry].sr1 = sr1;
+    event_log[next_fr_entry].sr2 = sr2;
+    next_fr_entry++;
+    if (next_fr_entry >= MAX_FR_ENTRIES)
+    {
+        next_fr_entry = 0;
+    }
+#endif
+
     // Initialise the read info
     i2c->read_buf_len = len;
     i2c->read_buf = buf;
@@ -491,8 +543,8 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
     // Enable ACK
     I2C_AcknowledgeConfig(i2c->channel, ENABLE);
 
-    // Enable the interrupt
-    I2C_ITConfig(i2c->channel, I2C_IT_EVT | I2C_IT_BUF | I2C_IT_ERR, ENABLE);
+    // Enable the event and error interrupts
+    I2C_ITConfig(i2c->channel, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
 
     if (i2c->master)
     {
@@ -530,6 +582,21 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         return -3;
     }
 
+#ifdef I2C_EVENT_TRACE
+    I2C_TypeDef *hi2c = i2c->channel;
+    uint32_t sr2 = (hi2c->SR2 << 16);
+    uint32_t sr1 = hi2c->SR1;
+
+    event_log[next_fr_entry].state = I2C_STATE_WRITE_CALLED;
+    event_log[next_fr_entry].sr1 = sr1;
+    event_log[next_fr_entry].sr2 = sr2;
+    next_fr_entry++;
+    if (next_fr_entry >= MAX_FR_ENTRIES)
+    {
+        next_fr_entry = 0;
+    }
+#endif
+
     // Initialise the write info
     i2c->write_buf_len = len;
     i2c->write_buf = buf;
@@ -550,8 +617,8 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         I2C_AcknowledgeConfig(i2c->channel, ENABLE);
     }
 
-    // Enable the interrupt
-    I2C_ITConfig(i2c->channel, I2C_IT_EVT | I2C_IT_BUF | I2C_IT_ERR, ENABLE);
+    // Enable the event and error interrupts
+    I2C_ITConfig(i2c->channel, I2C_IT_EVT | I2C_IT_ERR, ENABLE);
 
     if (i2c->master)
     {
@@ -654,7 +721,7 @@ static gpio_pin_t audio_reset_pd4 =
              .GPIO_Speed = GPIO_Speed_50MHz, .GPIO_OType = GPIO_OType_PP, .GPIO_PuPd = GPIO_PuPd_NOPULL},
  };
 
-static i2c_t i2_device =
+static i2c_t i2c_device =
 {
     .channel = I2C1,
     .master = true,
@@ -690,23 +757,33 @@ static void i2_error_cb(i2c_t *i2c, i2c_error_code_t error_code, void *param)
 // is correct.
 bool i2c_test_readCS43L22(void)
 {
+    uint32_t start_time;
+    uint32_t now;
+
     // Take the audio chip out of reset
     gpio_init_pin(&audio_reset_pd4);
     gpio_set_pin(&audio_reset_pd4, 1);
 
     // Initialise the I2C peripheral
-    i2c_init(&i2_device);
+    i2c_init(&i2c_device);
 
     // Write the register address
     i2c_done = false;
     i2c_failed = false;
     i2c_buf[0] = 0x01;
-    if (i2c_write(&i2_device, 0x94, i2c_buf, 1, i2c_done_cb, i2_error_cb, NULL))
+    if (i2c_write(&i2c_device, 0x94, i2c_buf, 1, i2c_done_cb, i2_error_cb, NULL))
     {
         return false;
     }
+    start_time = sys_get_tick();
     while (!i2c_done)
     {
+        now = sys_get_tick();
+        if ((uint32_t)(now - start_time) > 1000)
+        {
+            i2c_cancel_write(&i2c_device);
+            return false;
+        }
     }
     if (i2c_failed)
     {
@@ -716,12 +793,19 @@ bool i2c_test_readCS43L22(void)
     // Read the register value
     i2c_done = false;
     i2c_failed = false;
-    if (i2c_read(&i2_device, 0x94, i2c_buf, 1, i2c_done_cb, i2_error_cb, NULL) != 0)
+    if (i2c_read(&i2c_device, 0x94, i2c_buf, 1, i2c_done_cb, i2_error_cb, NULL) != 0)
     {
         return false;
     }
+    start_time = sys_get_tick();
     while (!i2c_done)
     {
+        now = sys_get_tick();
+        if ((uint32_t)(now - start_time) > 1000)
+        {
+            i2c_cancel_read(&i2c_device);
+            return false;
+        }
     }
     if (i2c_failed)
     {
