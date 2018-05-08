@@ -24,7 +24,6 @@ typedef enum
     I2C_STATE_BUSY_RX_ADDRESS,  // Master sending address, slave waiting for address, for a read
     I2C_STATE_BUSY_TX,          // Writing data
     I2C_STATE_BUSY_RX,          // Reading data
-    I2C_STATE_BUSY_RX_STOP,     // Slave waiting for stop when reading data
     I2C_STATE_COMPLETE,         // Read or write complete
     I2C_STATE_ERROR,            // Read or write failed
     I2C_STATE_WRITE_CALLED,
@@ -76,8 +75,7 @@ bool i2c_busy(i2c_t *i2c)
             || (i2c->state == I2C_STATE_BUSY_RX_ADDRESS)
             || (i2c->state == I2C_STATE_BUSY_TX_ADDRESS)
             || (i2c->state == I2C_STATE_BUSY_RX)
-            || (i2c->state == I2C_STATE_BUSY_TX)
-            || (i2c->state == I2C_STATE_BUSY_RX_STOP));
+            || (i2c->state == I2C_STATE_BUSY_TX));
 }
 
 void i2c_clear_read(i2c_t *i2c)
@@ -309,13 +307,14 @@ static void i2c_receive_event(i2c_t *i2c, uint32_t sr1)
                 }
                 else
                 {
-                    // Wait for the stop
-                    i2c->state = I2C_STATE_BUSY_RX_STOP;
-                    // Disable the TXE/RXE interrupt
-                    I2C_ITConfig(i2c->channel, I2C_IT_BUF, DISABLE);
+                    // The receive is complete.
+                    // We may get a STOP next or a repeated start.
+                    i2c->state = I2C_STATE_COMPLETE;
+                    i2c_rx_complete(i2c, i2c->read_count);
                 }
                 break;
             }
+            // Read SR1 again for the while loop
             sr1 = hi2c->SR1;
         }
     }
@@ -333,7 +332,6 @@ static void i2c_stop_event(i2c_t *i2c)
     I2C_TypeDef *hi2c = i2c->channel;
 
     // Clear the stop bit flag
-    //__attribute__((__unused__))
     uint32_t temp_reg = hi2c->SR1;
     (void)temp_reg;
     hi2c->CR1 |= I2C_CR1_PE;
@@ -359,7 +357,7 @@ static void i2c_stop_event(i2c_t *i2c)
         // Call the tx complete callback
         i2c_tx_complete(i2c, i2c->write_count);
     }
-    else if ((i2c->state == I2C_STATE_BUSY_RX) || (i2c->state == I2C_STATE_BUSY_RX_STOP))
+    else if (i2c->state == I2C_STATE_BUSY_RX)
     {
         // Receiving, or waiting for stop at the end of receiving
         if (i2c->read_count >= i2c->read_buf_len)
@@ -444,15 +442,11 @@ static void i2c_irq_handler(i2c_t *i2c)
     {
         i2c_address_event(i2c);
     }
-    //if (sr2 & I2C_FLAG_TRA)
+    if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
+       || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
     {
-        // Transmitting
-        if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
-            || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
-        {
-            // Transmit event
-            i2c_transmit_event(i2c, sr1, cr2);
-        }
+        // Transmit event
+        i2c_transmit_event(i2c, sr1, cr2);
     }
     if ((sr1 & I2C_FLAG_RXNE) && (cr2 & I2C_IT_BUF))
     {
@@ -699,6 +693,7 @@ void i2c_init(i2c_t *i2c)
 }
 
 #ifdef I2C_TEST_READ_CS43L22
+
 // Use this to test I2C master in a Discovery board with the CS43L22 audio chip.
 // The following definitions are for the STM32F407G-DISC1
 
