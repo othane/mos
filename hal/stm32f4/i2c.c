@@ -30,8 +30,6 @@ typedef enum
     I2C_STATE_READ_CALLED,
 } i2c_state_t;
 
-#define I2C_EVENT_TRACE
-
 #ifdef I2C_EVENT_TRACE
 
 // Log I2C event interrupts for debugging
@@ -271,11 +269,6 @@ static void i2c_transmit_event(i2c_t *i2c, uint32_t sr1, uint32_t cr2)
             hi2c->DR = i2c->write_buf[i2c->write_count++];
         }
     }
-    else
-    {
-        // We shouldn't be transmitting
-        i2c_invalid_event(i2c);
-    }
 }
 
 // Byte received event
@@ -443,7 +436,7 @@ static void i2c_irq_handler(i2c_t *i2c)
         i2c_address_event(i2c);
     }
     if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
-       || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
+        || ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
     {
         // Transmit event
         i2c_transmit_event(i2c, sr1, cr2);
@@ -485,6 +478,26 @@ void I2C2_ER_IRQHandler(void)
     i2c_error_irq_handler(i2c_irq_list[1]);
 }
 
+// Wait for the I2C bus to be not busy.
+// Returns true if the bus is available, false if the wait times out
+bool wait_for_i2c_bus(i2c_t *i2c)
+{
+    I2C_TypeDef *hi2c = i2c->channel;
+    int timeout_counter = 25U * (SystemCoreClock / 25U /1000U);
+    uint32_t sr2 = (hi2c->SR2 << 16);
+
+    while (sr2 & I2C_FLAG_BUSY)
+    {
+        timeout_counter--;
+        if (!timeout_counter)
+        {
+            return false;
+        }
+        sr2 = (hi2c->SR2 << 16);
+    }
+    return true;
+}
+
 int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param)
 {   
@@ -498,6 +511,14 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
     if (i2c_busy(i2c))
     {
         // The I2C driver is busy
+        sys_leave_critical_section();
+        return -3;
+    }
+
+    // Wait for the I2C bus to not be busy
+    if (!wait_for_i2c_bus(i2c))
+    {
+        // I2C bus busy timeout
         sys_leave_critical_section();
         return -3;
     }
@@ -572,6 +593,14 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
     if (i2c_busy(i2c))
     {
         // The I2C driver is busy
+        sys_leave_critical_section();
+        return -2;
+    }
+
+    // Wait for the I2C bus to not be busy
+    if (!wait_for_i2c_bus(i2c))
+    {
+        // I2C bus busy timeout
         sys_leave_critical_section();
         return -3;
     }
