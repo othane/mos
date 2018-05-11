@@ -515,12 +515,15 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         return -3;
     }
 
-    // Wait for the I2C bus to not be busy
-    if (!wait_for_i2c_bus(i2c))
+    if (i2c->master)
     {
-        // I2C bus busy timeout
-        sys_leave_critical_section();
-        return -3;
+        // Wait for the I2C bus to be free
+        if (!wait_for_i2c_bus(i2c))
+        {
+            // I2C bus busy timeout
+            sys_leave_critical_section();
+            return -3;
+        }
     }
 
 #ifdef I2C_EVENT_TRACE
@@ -597,12 +600,15 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
         return -2;
     }
 
-    // Wait for the I2C bus to not be busy
-    if (!wait_for_i2c_bus(i2c))
+    if (i2c->master)
     {
-        // I2C bus busy timeout
-        sys_leave_critical_section();
-        return -3;
+        // Wait for the I2C bus to be free
+        if (!wait_for_i2c_bus(i2c))
+        {
+            // I2C bus busy timeout
+            sys_leave_critical_section();
+            return -3;
+        }
     }
 
 #ifdef I2C_EVENT_TRACE
