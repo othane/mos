@@ -55,6 +55,8 @@ static void uart_clear_read(uart_t *uart)
 		USART_DMACmd(uart->channel, USART_DMAReq_Rx, DISABLE);
 	}
 	USART_ITConfig(uart->channel, USART_IT_RXNE, DISABLE);
+	USART_ITConfig(uart->channel, USART_IT_PE, DISABLE);
+	USART_ITConfig(uart->channel, USART_IT_ERR, DISABLE);
 
 	// clear the buffers for next read
 	uart->read_buf = NULL;
@@ -283,8 +285,11 @@ void uart_read(uart_t *uart, void *buf, uint16_t len, uart_read_complete_cb cb, 
 		dma_request(&uart->rx_dma_req);
 	}
 	else
+	{
 		USART_ITConfig(uart->channel, USART_IT_RXNE, ENABLE);
-
+		USART_ITConfig(uart->channel, USART_IT_PE, ENABLE);
+		USART_ITConfig(uart->channel, USART_IT_ERR, ENABLE);
+	}
 done:
 	sys_leave_critical_section();
 	return;
@@ -371,11 +376,47 @@ void uart_cancel_write(uart_t *uart)
 	sys_leave_critical_section();
 }
 
+void uart_deinit(uart_t *uart) 
+{
+	uart_cancel_write(uart);
+	uart_cancel_read(uart);
+	
+	NVIC_InitTypeDef nvic_init;
+	USART_Cmd(uart->channel, DISABLE);
+
+	// init the uart clk
+	switch ((uint32_t)uart->channel)
+	{
+		case (uint32_t)USART1:
+			RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, DISABLE);
+			break;
+		case (uint32_t)USART2:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, DISABLE);
+			break;
+		case (uint32_t)USART3:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, DISABLE);
+			break;
+		case (uint32_t)UART4:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART4, DISABLE);
+			break;
+		case (uint32_t)UART5:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART5, DISABLE);
+			break;
+	}
+
+	// setup the uart isr
+	nvic_init.NVIC_IRQChannelCmd = DISABLE;
+	nvic_init.NVIC_IRQChannel = uart_irq(uart);
+	nvic_init.NVIC_IRQChannelCmd = DISABLE;
+	NVIC_Init(&nvic_init);
+
+	// set uart and enable
+	USART_DeInit(uart->channel);
+}
 
 void uart_init(uart_t *uart)
 {
 	NVIC_InitTypeDef nvic_init;
-
 	// init the uart gpio lines
 	gpio_init_pin(uart->rx);
 	gpio_init_pin(uart->tx);
