@@ -27,6 +27,13 @@ void uart_init(uart_t *uart);
 
 
 /**
+ * @brief remove a uart device
+ * @param uart uart device to remove
+ */
+void uart_deinit(uart_t *uart);
+
+
+/**
  * @brief set read timeout
  * @param uart uart device to set timeout for
  * @param timeout time of inactivity to consider read completed
