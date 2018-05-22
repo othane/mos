@@ -379,8 +379,6 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 }
 
 
-
-
 void gpio_init_pin(gpio_pin_t *pin)
 {
 	uint8_t pinpos;
@@ -394,11 +392,6 @@ void gpio_init_pin(gpio_pin_t *pin)
 	RCC_AHBPeriphClockCmd(pin_to_rcc_periph(pin), ENABLE);
 	RCC_AHBPeriphResetCmd(pin_to_rcc_periph(pin), DISABLE);
 
-	// setup the pin configurations
-	if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
-		GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
-	GPIO_Init(pin->port, &pin->cfg);
-
 	// find the position for this pin (yuk long lookups)
 	pin->pos = 255; // indicates an invalid pos (the GPIO_Pin is likely bad)
 	for (pinpos = 0x00; pinpos < 16; pinpos++)
@@ -406,11 +399,37 @@ void gpio_init_pin(gpio_pin_t *pin)
 		if (pin->cfg.GPIO_Pin == (1 << pinpos))
 		{
 			pin->pos = pinpos;
-			break;
+
+			// setup the pin configurations (mostly just copied from GPIO_Init, but modified to
+			// ensure we stay in 'z' state when returning from init and the user sets the initial
+			// value for an output by calling something like gpio_set_pin)
+			if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
+				GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
+
+			if ((pin->cfg.GPIO_Mode == GPIO_Mode_OUT) || (pin->cfg.GPIO_Mode == GPIO_Mode_AF))
+			{
+				// speed mode configuration
+				pin->port->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR0 << 2*pin->pos * 2);
+				pin->port->OSPEEDR |= ((uint32_t)(pin->cfg.GPIO_Speed) << (pin->pos * 2));
+
+				// output mode configuration
+				pin->port->OTYPER  &= ~((GPIO_OTYPER_OT_0) << ((uint16_t)pin->pos)) ;
+				pin->port->OTYPER |= (uint16_t)(((uint16_t)pin->cfg.GPIO_OType) << ((uint16_t)pin->pos));
+			}
+
+			// default to 'z' state after init
+			pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
+
+			/* pull-up pull down resistor configuration*/
+			pin->port->PUPDR &= ~(GPIO_PUPDR_PUPDR0 << ((uint16_t)pin->pos * 2));
+			pin->port->PUPDR |= (((uint32_t)pin->cfg.GPIO_PuPd) << (pin->pos * 2));
+
+			pin->initialised = 1;
+			return;
 		}
 	}
 
-	pin->initialised = 1;
+	//@todo error we should never get to this code !!
 }
 
 
