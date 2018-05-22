@@ -14,14 +14,14 @@
 
 typedef enum
 {
-    I2C_ERROR_NONE      = 0x00,
-    I2C_ERROR_BERR      = 0x01,
-    I2C_ERROR_ARLO      = 0x02,
-    I2C_ERROR_AF        = 0x04,
-    I2C_ERROR_OVR       = 0x08,
-    I2C_ERROR_DMA       = 0x10,
-    I2C_ERROR_TIMEOUT   = 0x20,
-    I2C_ERROR_INVEVNT   = 0x40
+	I2C_ERROR_NONE	  = 0x00,
+	I2C_ERROR_BERR	  = 0x01,
+	I2C_ERROR_ARLO	  = 0x02,
+	I2C_ERROR_AF		= 0x04,
+	I2C_ERROR_OVR	   = 0x08,
+	I2C_ERROR_DMA	   = 0x10,
+	I2C_ERROR_TIMEOUT   = 0x20,
+	I2C_ERROR_INVEVNT   = 0x40
 } i2c_error_code_t;
 
 /**
@@ -32,7 +32,7 @@ typedef struct i2c_t i2c_t;
 /**
  * @brief Initialise an i2c device
  * @param i2c i2c device to configure
- */    
+ */	
 void i2c_init(i2c_t *i2c);
 
 /**
@@ -64,7 +64,7 @@ typedef void (*i2c_error_cb)(i2c_t *i2c, i2c_error_code_t error_code, void *para
  * Note that the callbacks are called from the interrupt handler.
  */
 int i2c_write(i2c_t *i2c, uint8_t device_address,void *buf, uint16_t len,
-        i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param);
+		i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param);
 
 /**
  * @brief cancel i2c write
@@ -92,7 +92,7 @@ void i2c_clear_read(i2c_t *i2c);
  * Note that the callbacks are called from the interrupt handler.
  */
 int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
-        i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param);
+		i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param);
 
 /**
  * @brief cancel i2c read
@@ -106,14 +106,5 @@ void i2c_cancel_read(i2c_t *i2c);
  * @param i2c i2c device to get the error code for
  */
 i2c_error_code_t i2c_last_error(i2c_t *i2c);
-
-#ifdef I2C_TEST_READ_CS43L22
-/**
- * @brief Test the I2C driver in master mode by reading
- *  the CS43L22 CHIP register on the Discovery board.
- * @param i2c i2c device
- */
-bool i2c_test_readCS43L22(void);
-#endif
 
 #endif
