@@ -34,6 +34,7 @@
 #include "pwm.h"
 #include "ppm.h"
 #include "usb.h"
+#include "i2c.h"
 #include "bootstrap.h"
 
 #ifndef NOHW_H

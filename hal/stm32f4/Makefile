@@ -32,6 +32,7 @@ SRC  = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_tim.c \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_dbgmcu.c \
 	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_usart.c \
+	./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/STM32F4xx_StdPeriph_Driver/src/stm32f4xx_i2c.c \
 	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_core.c \
 	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_ioreq.c \
 	./STM32_USB-Host-Device_Lib_V2.2.0/Libraries/STM32_USB_Device_Library/Core/src/usbd_req.c \
@@ -59,6 +60,7 @@ SRC-$(CONFIG_PWM) += ./pwm.c ./tmr.c
 SRC-$(CONFIG_PPM) += ./ppm.c ./tmr.c
 SRC-$(CONFIG_UART) += ./uart.c
 SRC-$(CONFIG_USB) += ./usb.c
+SRC-$(CONFIG_I2C) += ./i2c.c
 
 ASRC = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/Source/Templates/gcc_ride7/startup_stm32f40xx.s
 
