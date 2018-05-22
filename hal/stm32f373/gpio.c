@@ -403,8 +403,12 @@ void gpio_init_pin(gpio_pin_t *pin)
 			// setup the pin configurations (mostly just copied from GPIO_Init, but modified to
 			// ensure we stay in 'z' state when returning from init and the user sets the initial
 			// value for an output by calling something like gpio_set_pin)
+			pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);  // default to 'z' state after init for anything that is not an AF GPIO
 			if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
+			{
 				GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
+				pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+			}
 
 			if ((pin->cfg.GPIO_Mode == GPIO_Mode_OUT) || (pin->cfg.GPIO_Mode == GPIO_Mode_AF))
 			{
@@ -416,9 +420,6 @@ void gpio_init_pin(gpio_pin_t *pin)
 				pin->port->OTYPER  &= ~((GPIO_OTYPER_OT_0) << ((uint16_t)pin->pos)) ;
 				pin->port->OTYPER |= (uint16_t)(((uint16_t)pin->cfg.GPIO_OType) << ((uint16_t)pin->pos));
 			}
-
-			// default to 'z' state after init
-			pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
 
 			/* pull-up pull down resistor configuration*/
 			pin->port->PUPDR &= ~(GPIO_PUPDR_PUPDR0 << ((uint16_t)pin->pos * 2));
