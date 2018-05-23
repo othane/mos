@@ -169,6 +169,7 @@ void adc_trace(adc_channel_t *ch, uint16_t *dst, int count, int trigger, adc_tra
 	if (adc->dma == NULL)
 		///@todo error current implementation does not support interrupts so we need a dma
 		goto done;
+	dma_cancel(adc->dma); // cancel any pending/running dma
 	adc->dma_req.complete = adc_dma_complete;
 	ch->buf = dst;
 	ch->count = count;
