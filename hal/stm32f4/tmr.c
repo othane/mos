@@ -300,7 +300,7 @@ done:
 	tmr_set_timebase(tmr, MAX(arr - 1, 0), (uint16_t)CLIP(prescaler - 1, 0, UINT16_MAX));
 
 	// return the actual period used
-	return (float)(tmr->prescaler * tmr->arr) / (float)tmr_freq;
+	return (float)((tmr->prescaler + 1) * (tmr->arr + 1)) / (float)tmr_freq;
 }
 
 
