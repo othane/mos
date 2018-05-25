@@ -456,3 +456,7 @@ void uart_init(uart_t *uart)
 	USART_Cmd(uart->channel, ENABLE);
 }
 
+void uart_set_baudrate(uart_t *uart, uint32_t baud)
+{
+	USART_BaudSet(uart->channel, baud);
+}
