@@ -379,7 +379,6 @@ void USART_Cmd(USART_TypeDef* USARTx, FunctionalState NewState);
 void USART_SetPrescaler(USART_TypeDef* USARTx, uint8_t USART_Prescaler);
 void USART_OverSampling8Cmd(USART_TypeDef* USARTx, FunctionalState NewState);
 void USART_OneBitMethodCmd(USART_TypeDef* USARTx, FunctionalState NewState);
-void USART_BaudSet(USART_TypeDef* USARTx, uint32_t baud);
 
 /* Data transfers functions ***************************************************/ 
 void USART_SendData(USART_TypeDef* USARTx, uint16_t Data);
