@@ -406,6 +406,64 @@ void uart_reset(uart_t *uart)
 }
 
 
+void uart_set_baudrate(uart_t *uart, uint32_t baud)
+{
+	USART_TypeDef* USARTx = uart->channel;
+	uint32_t tmpreg = 0x00, apbclock = 0x00;
+	uint32_t divider = 0x00;
+	RCC_ClocksTypeDef RCC_ClocksStatus;
+	
+	/* Configure the USART Baud Rate */
+	RCC_GetClocksFreq(&RCC_ClocksStatus);
+
+	if (USARTx == USART1)
+	{
+		apbclock = RCC_ClocksStatus.USART1CLK_Frequency;
+	}
+	else if (USARTx == USART2)
+	{
+		apbclock = RCC_ClocksStatus.USART2CLK_Frequency;
+	}
+	else 
+	{
+		apbclock = RCC_ClocksStatus.USART3CLK_Frequency;
+	}
+
+	/* Determine the integer part */
+	if ((USARTx->CR1 & USART_CR1_OVER8) != 0)
+	{
+		/* (divider * 10) computing in case Oversampling mode is 8 Samples */
+		divider = (uint32_t)((2 * apbclock) / (baud));
+		tmpreg  = (uint32_t)((2 * apbclock) % (baud));
+	}
+	else /* if ((USARTx->CR1 & CR1_OVER8_Set) == 0) */
+	{
+		/* (divider * 10) computing in case Oversampling mode is 16 Samples */
+		divider = (uint32_t)((apbclock) / (baud));
+		tmpreg  = (uint32_t)((apbclock) % (baud));
+	}
+
+	/* round the divider : if fractional part i greater than 0.5 increment divider */
+	if (tmpreg >=  (baud) / 2)
+	{
+		divider++;
+	}
+
+	/* Implement the divider in case Oversampling mode is 8 Samples */
+	if ((USARTx->CR1 & USART_CR1_OVER8) != 0)
+	{
+		/* get the LSB of divider and shift it to the right by 1 bit */
+		tmpreg = (divider & (uint16_t)0x000F) >> 1;
+
+		/* update the divider value */
+		divider = (divider & (uint16_t)0xFFF0) | tmpreg;
+	}
+
+	/* Write to USART BRR */
+	USARTx->BRR = (uint16_t)divider;
+}
+
+
 void uart_init(uart_t *uart)
 {
 	NVIC_InitTypeDef nvic_init;
