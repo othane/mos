@@ -110,4 +110,11 @@ int uart_read_count(uart_t *uart);
  */
 void uart_cancel_read(uart_t *uart);
 
+/**
+ * @brief modify baud rate on-the-fly
+ * @param uart uart device to modify_baud
+ * @param baud desired new baud rate
+ */
+void uart_set_baudrate(uart_t *uart, uint32_t baud);
+
 #endif
