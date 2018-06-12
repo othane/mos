@@ -227,6 +227,20 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 }
 
 
+void adc_cancel_trace(adc_channel_t *ch)
+{
+	adc_t *adc = ch->adc;
+
+	// cancel dma
+	sys_enter_critical_section();
+	if (adc->dma == NULL)
+		///@todo error current implementation does not support interrupts so we need a dma
+		return;
+	dma_cancel(adc->dma); // cancel any pending/running dma
+	sys_leave_critical_section();
+}
+
+
 int32_t adc_read(adc_channel_t *channel)
 {
 	int32_t r;
