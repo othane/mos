@@ -33,6 +33,13 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 
 
 /**
+ * @brief cancel any pending trace above
+ * @param ch channel to cancel trace on
+ */
+void adc_cancel_trace(adc_channel_t *ch);
+
+
+/**
  * @brief read a single value from the adc channel
  * @param ch channel to read from
  */
