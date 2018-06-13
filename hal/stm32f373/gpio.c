@@ -403,11 +403,20 @@ void gpio_init_pin(gpio_pin_t *pin)
 			// setup the pin configurations (mostly just copied from GPIO_Init, but modified to
 			// ensure we stay in 'z' state when returning from init and the user sets the initial
 			// value for an output by calling something like gpio_set_pin)
-			pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);  // default to 'z' state after init for anything that is not an AF GPIO
-			if (pin->cfg.GPIO_Mode == GPIO_Mode_AF)
+			switch (pin->cfg.GPIO_Mode)
 			{
-				GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
-				pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+				case GPIO_Mode_AF:
+					GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
+					pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+					break;
+				case GPIO_Mode_AN:
+					pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+					break;
+				case GPIO_Mode_IN:
+				case GPIO_Mode_OUT:
+					// default to 'z' state after init
+					pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
+					break;
 			}
 
 			if ((pin->cfg.GPIO_Mode == GPIO_Mode_OUT) || (pin->cfg.GPIO_Mode == GPIO_Mode_AF))
