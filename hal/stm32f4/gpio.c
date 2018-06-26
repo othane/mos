@@ -41,6 +41,18 @@ static uint32_t pin_to_rcc_periph(gpio_pin_t *pin)
 		case (uint32_t)GPIOF:
 			ret = RCC_AHB1Periph_GPIOF;
 			break;
+		case (uint32_t)GPIOG:
+			ret = RCC_AHB1Periph_GPIOG;
+			break;
+		case (uint32_t)GPIOH:
+			ret = RCC_AHB1Periph_GPIOH;
+			break;
+		case (uint32_t)GPIOI:
+			ret = RCC_AHB1Periph_GPIOI;
+			break;
+		case (uint32_t)GPIOJ:
+			ret = RCC_AHB1Periph_GPIOJ;
+			break;
 		default:
 			ret = RCC_AHB1Periph_GPIOA;
 			break;
@@ -67,6 +79,14 @@ static uint8_t gpio_pin_to_port_source(gpio_pin_t *pin)
 			return EXTI_PortSourceGPIOE;
 		case (uint32_t)GPIOF:
 			return EXTI_PortSourceGPIOF;
+		case (uint32_t)GPIOG:
+			return EXTI_PortSourceGPIOG;
+		case (uint32_t)GPIOH:
+			return EXTI_PortSourceGPIOH;
+		case (uint32_t)GPIOI:
+			return EXTI_PortSourceGPIOI;
+		case (uint32_t)GPIOJ:
+			return EXTI_PortSourceGPIOJ;
 		default:
 			///@todo error
 			return EXTI_PortSourceGPIOA;
@@ -402,27 +422,27 @@ void gpio_init_pin(gpio_pin_t *pin)
 			// setup the pin configurations (mostly just copied from GPIO_Init, but modified to
 			// ensure we stay in 'z' state when returning from init and the user sets the initial
 			// value for an output by calling something like gpio_set_pin)
+			pin->port->MODER &= ~(GPIO_MODER_MODER0 << (pin->pos * 2)); // clear bits (input state)
 			switch (pin->cfg.GPIO_Mode)
 			{
 				case GPIO_Mode_AF:
 					GPIO_PinAFConfig(pin->port, gpio_pin_to_pin_source(pin), pin->af);
-					pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+					pin->port->MODER |= ((uint32_t)pin->cfg.GPIO_Mode) << (pin->pos * 2);
 					break;
 				case GPIO_Mode_AN:
-					pin->port->MODER |= (((uint32_t)pin->cfg.GPIO_Mode) << (pinpos * 2));
+					pin->port->MODER |= ((uint32_t)pin->cfg.GPIO_Mode) << (pin->pos * 2);
 					break;
 				case GPIO_Mode_IN:
 				case GPIO_Mode_OUT:
 					// default to 'z' state after init
-					pin->port->MODER &= ~(GPIO_MODER_MODER0 << 2*pin->pos);
 					break;
 			}
 
 			if ((pin->cfg.GPIO_Mode == GPIO_Mode_OUT) || (pin->cfg.GPIO_Mode == GPIO_Mode_AF))
 			{
 				// speed mode configuration
-				pin->port->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR0 << 2*pin->pos * 2);
-				pin->port->OSPEEDR |= ((uint32_t)(pin->cfg.GPIO_Speed) << (pin->pos * 2));
+				pin->port->OSPEEDR &= ~(GPIO_OSPEEDER_OSPEEDR0 << (pin->pos * 2));
+				pin->port->OSPEEDR |= ((uint32_t)(pin->cfg.GPIO_Speed)) << (pin->pos * 2);
 
 				// output mode configuration
 				pin->port->OTYPER  &= ~((GPIO_OTYPER_OT_0) << ((uint16_t)pin->pos)) ;
@@ -431,7 +451,7 @@ void gpio_init_pin(gpio_pin_t *pin)
 
 			/* pull-up pull down resistor configuration*/
 			pin->port->PUPDR &= ~(GPIO_PUPDR_PUPDR0 << ((uint16_t)pin->pos * 2));
-			pin->port->PUPDR |= (((uint32_t)pin->cfg.GPIO_PuPd) << (pin->pos * 2));
+			pin->port->PUPDR |= ((uint32_t)pin->cfg.GPIO_PuPd) << (pin->pos * 2);
 
 			pin->initialised = 1;
 			return;
