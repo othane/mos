@@ -28,6 +28,7 @@
 #include "spis.h"
 #include "spim.h"
 #include "nvm.h"
+#include "fmc.h"
 #include "crc.h"
 #include "adc.h"
 #include "tmr.h"

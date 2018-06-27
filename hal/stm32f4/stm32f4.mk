@@ -11,9 +11,12 @@ export BIN  = $(CROSS_COMPILE)objcopy -O ihex
 export SIZE = $(CROSS_COMPILE)size
 export GDB = $(CROSS_COMPILE)gdb
 
+# default sub arch to basic stm32f4 peripherals (override this to get all the goodies)
+SUB_ARCH ?= STM32F40_41xxx
+
 MCU = cortex-m4
 FPU = -mfloat-abi=hard -mfpu=fpv4-sp-d16 -D__FPU_USED=1 -D__FPU_PRESENT=1 -DARM_MATH_CM4
-DEFS = -DUSE_STDPERIPH_DRIVER -DSTM32F40_41xxx -DRUN_FROM_FLASH=1 -DHSE_VALUE=8000000
+DEFS = -DUSE_STDPERIPH_DRIVER -D$(SUB_ARCH) -DRUN_FROM_FLASH=1 -DHSE_VALUE=8000000
 OPT ?= -O0
 MCFLAGS = -mthumb -mcpu=$(MCU) $(FPU)
 

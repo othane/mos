@@ -46,6 +46,10 @@ SRC  = ./STM32F4xx_DSP_StdPeriph_Lib_V1.8.0/Libraries/CMSIS/Device/ST/STM32F4xx/
 	./spi.c \
 	./sys.c
 
+ifneq (,$(filter $(SUB_ARCH), STM32F427_437xx STM32F429_439xx STM32F446xx STM32F469_479xx))
+SRC += fmc.c
+endif
+
 	
 # these files are only included when configured ... this is because they implement isr's and gcc cannot 
 # know that you aren't going to call these so it includes everything, and this can blow your code size ...
