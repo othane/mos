@@ -335,7 +335,7 @@ void EXTI1_IRQHandler(void)
 }
 
 
-void EXTI2_TS_IRQHandler(void)
+void EXTI2_IRQHandler(void)
 {
 	exti_isr(2, 2);
 }
@@ -376,6 +376,7 @@ static void gpio_set_edge_event(gpio_pin_t *pin, EXTITrigger_TypeDef trig, gpio_
 	uint32_t exti_line = gpio_pin_to_exti_line(pin);
 
 	// set pin to EXTI mode
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 	SYSCFG_EXTILineConfig(gpio_pin_to_port_source(pin), gpio_pin_to_pin_source(pin));
 
 	// Configure EXTIx line to trigger irq
