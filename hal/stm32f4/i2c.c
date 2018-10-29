@@ -20,11 +20,11 @@ typedef enum
 	I2C_STATE_IDLE,
 	I2C_STATE_BUSY_START_TX,	// Master sending start for write
 	I2C_STATE_BUSY_START_RX,	// Master sending start for read
-	I2C_STATE_BUSY_TX_ADDRESS,  // Master sending address, slave waiting for address, for a write
-	I2C_STATE_BUSY_RX_ADDRESS,  // Master sending address, slave waiting for address, for a read
-	I2C_STATE_BUSY_TX,		  // Writing data
-	I2C_STATE_BUSY_RX,		  // Reading data
-	I2C_STATE_COMPLETE,		 // Read or write complete
+	I2C_STATE_BUSY_TX_ADDRESS,	// Master sending address, slave waiting for address, for a write
+	I2C_STATE_BUSY_RX_ADDRESS,	// Master sending address, slave waiting for address, for a read
+	I2C_STATE_BUSY_TX,			// Writing data
+	I2C_STATE_BUSY_RX,			// Reading data
+	I2C_STATE_COMPLETE,			// Read or write complete
 	I2C_STATE_ERROR,			// Read or write failed
 	I2C_STATE_WRITE_CALLED,
 	I2C_STATE_READ_CALLED,
@@ -68,7 +68,7 @@ static uint8_t i2c_irq(i2c_t *i2c)
 
 bool i2c_busy(i2c_t *i2c)
 {
-	return (   (i2c->state == I2C_STATE_BUSY_START_RX)
+	return ((i2c->state == I2C_STATE_BUSY_START_RX)
 			|| (i2c->state == I2C_STATE_BUSY_START_TX)
 			|| (i2c->state == I2C_STATE_BUSY_RX_ADDRESS)
 			|| (i2c->state == I2C_STATE_BUSY_TX_ADDRESS)
@@ -414,11 +414,11 @@ static void i2c_irq_handler(i2c_t *i2c)
 
 	I2C_TypeDef *hi2c = i2c->channel;
 	// Read SR2 and shift up 16 bits to match bit definitions in stm32f4xx_i2c.h
-	uint32_t sr2 = (hi2c->SR2 << 16);
 	uint32_t sr1 = hi2c->SR1;
 	uint32_t cr2 = hi2c->CR2;
 
 #ifdef I2C_EVENT_TRACE
+	uint32_t sr2 = (hi2c->SR2 << 16);
 	event_log[next_fr_entry].state = i2c->state;
 	event_log[next_fr_entry].sr1 = sr1;
 	event_log[next_fr_entry].sr2 = sr2;
@@ -435,7 +435,7 @@ static void i2c_irq_handler(i2c_t *i2c)
 	{
 		i2c_address_event(i2c);
 	}
-	if (   ((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
+	if (((sr1 & I2C_FLAG_TXE) && (cr2 & I2C_IT_BUF))
 		|| ((sr1 & I2C_FLAG_BTF) && (cr2 & I2C_IT_EVT)))
 	{
 		// Transmit event
@@ -500,7 +500,7 @@ bool wait_for_i2c_bus(i2c_t *i2c)
 
 int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len,
 		i2c_transfer_complete_cb cb, i2c_error_cb error_cb, void *param)
-{   
+{
 	if (len < 1)
 	{
 		return -1;
@@ -675,7 +675,7 @@ i2c_error_code_t i2c_last_error(i2c_t *i2c)
 void i2c_init(i2c_t *i2c)
 {
 	NVIC_InitTypeDef NVIC_InitStructure;
-	I2C_InitTypeDef  I2C_InitStructure;
+	I2C_InitTypeDef I2C_InitStructure;
 
 	/* gpio settings */
 	gpio_init_pin(i2c->scl);
