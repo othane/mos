@@ -223,6 +223,7 @@ void adc_cancel_trace(adc_channel_t *ch)
 	if (adc->dma == NULL)
 		///@todo error current implementation does not support interrupts so we need a dma
 		return;
+	ADC_DMACmd(adc->base, DISABLE);
 	dma_cancel(adc->dma); // cancel any pending/running dma
 	sys_leave_critical_section();
 }
