@@ -14,6 +14,7 @@ SRC = nvm_utest.c
 OBJS = $(SRC:.c=.o)
 
 CPFLAGS += -DNOHW_H
+CPFLAGS +=-D$(ARCH)
 
 INCDIR += ../../hal/
 INC = $(patsubst %,-I%,$(INCDIR))

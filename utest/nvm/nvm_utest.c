@@ -16,7 +16,12 @@
 #include <hal.h>
 #include <string.h>
 
-const char page0[2*16*1024] at_symbol(".free_page0") = {1,2,3,4,};
+#if defined (stm32f373)
+	#define PAGE_SIZE (2 * 1024)
+#else // for now default to a 16KB pages for now so you might get a build error if you get this wrong (hopefully, but probably not)
+	#define PAGE_SIZE (16 * 1024)
+#endif
+const char page0[2*PAGE_SIZE] at_symbol(".free_page0") = {1,2,3,4,};
 char page0_ram[sizeof(page0)];
 const char msg[32] at_symbol(".free_page1") = "hello";
 char msg_ram[sizeof(msg)] = {0,};

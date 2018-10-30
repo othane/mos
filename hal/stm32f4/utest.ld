@@ -1,9 +1,9 @@
 MEMORY
 {
-  RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 192K
-  FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 2*16K
-  FREE_PAGE0(xrx) : ORIGIN = 0x08008000, LENGTH = 2*16K
-  FREE_PAGE1(xrx) : ORIGIN = 0x08010000, LENGTH = 64K 
+	RAM (xrw) : ORIGIN = 0x20000000, LENGTH = 192K
+	FLASH (rx) : ORIGIN = 0x08000000, LENGTH = 2*16K
+	FREE_PAGE0(xrx) : ORIGIN = 0x08008000, LENGTH = 2*16K
+	FREE_PAGE1(xrx) : ORIGIN = 0x08010000, LENGTH = 64K 
 }
 
 /* higher address of the user mode stack */
@@ -65,7 +65,7 @@ SECTIONS
 		KEEP (*(.eh_frame))
 	} >FLASH
 
-	/* .ARM.exidx is sorted, so has to go in its own output section.  */
+	/* .ARM.exidx is sorted, so has to go in its own output section. */
 	__exidx_start = .;
 	.ARM.exidx :
 	{
@@ -123,7 +123,7 @@ SECTIONS
 	The program executes knowing that the data is in the RAM
 	but the loader puts the initial values in the FLASH (inidata).
 	It is one task of the startup to copy the initial values from FLASH to RAM. */
-	.data  : AT ( _sidata )
+	.data: AT ( _sidata )
 	{
 		. = ALIGN(4);
 		/* This is used by the startup in order to initialize the .data secion */
