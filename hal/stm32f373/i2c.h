@@ -12,9 +12,6 @@
 #ifndef __I2C__
 #define __I2C__
 
-#define I2C_TIMEOUT         ((uint32_t)0x10)
-#define I2C_LONG_TIMEOUT    ((uint32_t)(I2C_FLAG_TIMEOUT)) 
-
 /**
  * @brief opaque i2c type
  */

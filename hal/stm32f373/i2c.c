@@ -15,6 +15,13 @@
 #include "dma_hw.h"
 #include "i2c_hw.h"
 
+/*
+ * NOTE this is a temporary define for cycle count timeouts
+ * those should later be replaced with proper register configured i2c timeouts
+ * this should (very roughly) take ~5ms before timing out
+ */
+#define I2C_Cycle_Timeout 30000
+
 static i2c_t *i2c_irq_list[2] = {NULL,};  ///< just store the i2c handle so we can get it in the irq (then hw.c is more free form)
 static uint8_t i2c_irq(i2c_t *i2c)
 {
@@ -201,7 +208,7 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_re
 
 	sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup read
 
-	uint32_t timeout = I2C_LONG_TIMEOUT;
+	uint32_t timeout = I2C_Cycle_Timeout;
 	while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_BUSY) != RESET)
 	{
 		if((timeout--) == 0) 
@@ -221,7 +228,7 @@ int i2c_read(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_re
 	// enable rx and interrupt to kick off the read
 	I2C_TransferHandling(i2c->channel, device_address, len, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);  
 	/* Wait until TXIS flag is set */
-	timeout = I2C_LONG_TIMEOUT;
+	timeout = I2C_Cycle_Timeout;
 
 	while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_RXNE) == RESET)
 	{
@@ -275,7 +282,7 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_w
 
 	sys_enter_critical_section();   // lock while changing things so an isr does not find a half setup write
 
-	uint32_t timeout = I2C_LONG_TIMEOUT;
+	uint32_t timeout = I2C_Cycle_Timeout;
 	while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_BUSY) != RESET)
 	{
 		if((timeout--) == 0)
@@ -293,7 +300,7 @@ int i2c_write(i2c_t *i2c, uint8_t device_address, void *buf, uint16_t len, i2c_w
 	i2c->write_complete_param = param;
 	/*send slave address*/
 	I2C_TransferHandling(i2c->channel, device_address, len, I2C_AutoEnd_Mode, I2C_Generate_Start_Write);
-	timeout = I2C_LONG_TIMEOUT;
+	timeout = I2C_Cycle_Timeout;
 
 	while(I2C_GetFlagStatus(i2c->channel, I2C_ISR_TXIS) == RESET)
 	{
