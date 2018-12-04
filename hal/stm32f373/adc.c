@@ -237,6 +237,17 @@ void adc_cancel_trace(adc_channel_t *ch)
 		///@todo error current implementation does not support interrupts so we need a dma
 		return;
 	dma_cancel(adc->dma); // cancel any pending/running dma
+
+	// clean up like we would on adc_dma_complete and just reset everything to default state
+	SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE); // disable ADC dma connection
+	SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE); // stop continuous mode
+	SDADC_InitModeCmd(adc->base, ENABLE); // reset the trigger source
+	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+	{}
+	SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+	SDADC_InitModeCmd(adc->base, DISABLE);
+	SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
+
 	sys_leave_critical_section();
 }
 

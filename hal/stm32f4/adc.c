@@ -217,6 +217,16 @@ done:
 void adc_cancel_trace(adc_channel_t *ch)
 {
 	adc_t *adc = ch->adc;
+	ADC_InitTypeDef init =
+	{
+		.ADC_Resolution = ADC_Resolution_12b,
+		.ADC_ScanConvMode = DISABLE,
+		.ADC_ContinuousConvMode = DISABLE,
+		.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None,
+		.ADC_ExternalTrigConv = ADC_ExternalTrigConv_T1_CC1, // this is dont care if ext trig is disable above
+		.ADC_DataAlign = ADC_DataAlign_Right,
+		.ADC_NbrOfConversion = 1,
+	};
 
 	// cancel dma
 	sys_enter_critical_section();
@@ -225,6 +235,12 @@ void adc_cancel_trace(adc_channel_t *ch)
 		return;
 	ADC_DMACmd(adc->base, DISABLE);
 	dma_cancel(adc->dma); // cancel any pending/running dma
+	
+	// clean up like we would on adc_dma_complete and just reset everything to default state
+	ADC_Init(adc->base, &init);
+	ADC_GetConversionValue(adc->base); // clear EOC flag in case of overrun
+	ADC_ClearFlag(adc->base, ADC_FLAG_OVR);
+
 	sys_leave_critical_section();
 }
 
