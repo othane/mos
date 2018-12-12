@@ -44,8 +44,10 @@ struct spim_t
 	void *xfer_complete_param;						///< completion parameter
 	dma_t *rx_dma;									///< optional dma used for rx (ie dont use isr, do it in hw)
 	dma_request_t rx_dma_req;						///< used by rx_dma
+	bool rx_completed;								///< true if the rx dma complete interrupt has been called
 	dma_t *tx_dma;									///< optional dma used for tx (ie dont use isr, do it in hw)
 	dma_request_t tx_dma_req;						///< used by tx_dma
+	bool tx_completed;								///< true if the tx dma complete interrupt has been called
 };
 
 

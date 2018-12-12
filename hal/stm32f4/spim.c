@@ -104,7 +104,6 @@ void spim_clear_io(spim_t *spim)
 	spim->len = 0;
 }
 
-
 void spim_irq_handler(int n)
 {
 	spim_t *spim = spim_irq_list[n];
@@ -121,7 +120,13 @@ void spim_irq_handler(int n)
 	
 	// write phase (reload the Tx register if it is empty and the isr is enabled)
 	if (SPI_I2S_GetITStatus(spim->channel, SPI_I2S_IT_TXE) == SET)
-		spim_write_phase(spim);
+	{
+		if (!spim_write_phase(spim))
+		{
+			// All data sent, disable the TXE interrupt
+			SPI_I2S_ITConfig(spim->channel, SPI_I2S_IT_TXE, DISABLE);
+		}
+	}
 
 	// handle completion callback
 	if (spim->read_count == spim->len)
@@ -141,10 +146,8 @@ void spim_irq_handler(int n)
 	}
 }
 
-
-void spim_rx_dma_complete(dma_request_t *req, void *param)
+void spim_dma_complete(spim_t *spim)
 {
-	spim_t *spim = (spim_t *)param;
 	spim_xfer_complete complete = spim->xfer_complete;
 	void *spim_xfer_param = spim->xfer_complete_param;
 	void *read_buf = spim->read_buf;
@@ -159,6 +162,23 @@ void spim_rx_dma_complete(dma_request_t *req, void *param)
 		complete(spim, spim->addr, read_buf, write_buf, len, spim_xfer_param);
 }
 
+void spim_rx_dma_complete(dma_request_t *req, void *param)
+{
+	spim_t *spim = (spim_t *)param;
+
+	spim->rx_completed = true;
+	if (spim->tx_completed)
+		spim_dma_complete(spim);
+}
+
+void spim_tx_dma_complete(dma_request_t *req, void *param)
+{
+	spim_t *spim = (spim_t *)param;
+
+	spim->tx_completed = true;
+	if (spim->rx_completed)
+		spim_dma_complete(spim);
+}
 
 static const struct prescalers_t {
 	uint16_t scale;
@@ -174,10 +194,11 @@ static const struct prescalers_t {
 	{.scale = 256, .reg = SPI_BaudRatePrescaler_256},
 };
 
-void spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
+bool spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
 {
 	float fclk = spi_get_clk_speed(spim->channel);
 	int k;
+	bool success = true;
 
 	// update speed from opts if needed (do this outside critical section)
 	if (opts->speed)
@@ -197,8 +218,11 @@ success:
 
 	if (spim->read_buf != NULL || spim->read_count != 0 ||
 		spim->write_buf != NULL || spim->write_count != 0)
-		///@todo xfer in progress already
+	{
+		// A transfer is already in progress
+		success = false;
 		goto done;
+	}
 
 	// load xfer details
 	spim->addr = addr;
@@ -224,6 +248,7 @@ success:
 		spim->rx_dma_req.complete = spim_rx_dma_complete;
 		spim->rx_dma_req.complete_param = spim;
 		spim->rx_dma_req.dma = spim->rx_dma;
+		spim->rx_completed = false;
 		spi_dma_cfg(SPI_DMA_DIR_RX, spim->channel, &spim->rx_dma_req, spim->read_buf, spim->len);
 		dma_request(&spim->rx_dma_req);
 		SPI_I2S_DMACmd(spim->channel, SPI_I2S_DMAReq_Rx, ENABLE);
@@ -240,11 +265,10 @@ success:
 	}
 	else
 	{
-		// since we complete when the last byte is read (this obviously happens after the last byte
-		// is transmitted) we don't need a complete routine for this.
-		spim->tx_dma_req.complete = NULL;
-		spim->tx_dma_req.complete_param = NULL;
+		spim->tx_dma_req.complete = spim_tx_dma_complete;
+		spim->tx_dma_req.complete_param = spim;
 		spim->tx_dma_req.dma = spim->tx_dma;
+		spim->tx_completed = false;
 		spi_dma_cfg(SPI_DMA_DIR_TX, spim->channel, &spim->tx_dma_req, spim->write_buf, spim->len);
 		SPI_I2S_DMACmd(spim->channel, SPI_I2S_DMAReq_Tx, ENABLE);
 		dma_request(&spim->tx_dma_req);
@@ -252,6 +276,7 @@ success:
 
 done:
 	sys_leave_critical_section();
+	return success;
 }
 
 

@@ -55,8 +55,9 @@ typedef void (*spim_xfer_complete)(spim_t *spim, uint16_t addr, void *read_buf, 
  * @param len write & read this many byte to/from the read/write buf's
  * @param complete call this when len bytes are transfered
  * @param param complete parameter
+ * @return true if the transfer was started, false if the SPI bus was busy and the transfer could not be started
  */
-void spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
+bool spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
 
 
 /**
