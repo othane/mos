@@ -44,6 +44,8 @@ void spim_init(spim_t *spim);
  */
 typedef void (*spim_xfer_complete)(spim_t *spim, uint16_t addr, void *read_buf, void *write_buf, uint16_t len, void *param);
 
+#define SPIM_OK			0
+#define SPIM_ERROR_BUSY -1	// Transfer already in progress
 
 /**
  * @brief start a spi master transfer
@@ -55,10 +57,17 @@ typedef void (*spim_xfer_complete)(spim_t *spim, uint16_t addr, void *read_buf, 
  * @param len write & read this many byte to/from the read/write buf's
  * @param complete call this when len bytes are transfered
  * @param param complete parameter
- * @return true if the transfer was started, false if the SPI bus was busy and the transfer could not be started
+ * @return number of bytes to be transferred if the transfer was started, or negative error code if the transfer could not be started
  */
-bool spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
+int spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param);
 
+/**
+ * @brief return true is the SPI master is busy
+ * @param spim spi master to use
+ * @return true when busy, false if it is OK to start a new transaction
+ *
+ */
+bool spim_busy(spim_t *spim);
 
 /**
  * @brief flush the current spi master xfer

@@ -197,11 +197,11 @@ static const struct prescalers_t {
 	{.scale = 256, .reg = SPI_BaudRatePrescaler_256},
 };
 
-bool spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
+int spim_xfer(spim_t *spim, spim_xfer_opts *opts, uint16_t addr, void *read_buf, void *write_buf, int len, spim_xfer_complete complete, void *param)
 {
 	float fclk = spi_get_clk_speed(spim->channel);
 	int k;
-	bool success = true;
+	int result = len;
 
 	// update speed from opts if needed (do this outside critical section)
 	if (opts->speed)
@@ -219,11 +219,10 @@ success:
 
 	sys_enter_critical_section();
 
-	if (spim->read_buf != NULL || spim->read_count != 0 ||
-		spim->write_buf != NULL || spim->write_count != 0)
+	if (spim_busy(spim))
 	{
 		// A transfer is already in progress
-		success = false;
+		result = SPIM_ERROR_BUSY;
 		goto done;
 	}
 
@@ -279,9 +278,14 @@ success:
 
 done:
 	sys_leave_critical_section();
-	return success;
+	return result;
 }
 
+bool spim_busy(spim_t *spim)
+{
+	return ((spim->read_buf != NULL) || (spim->read_count != 0)
+			|| (spim->write_buf != NULL) || (spim->write_count != 0));
+}
 
 void spim_init(spim_t *spim)
 {
