@@ -117,7 +117,10 @@ void boot(const bootstrap_prog_header *header)
 	// set cpu to run vector table from ram
 	NVIC_SetVectorTable(NVIC_VectTab_RAM, 0);
 
+	// re-initialise the stack pointer
+	__set_MSP((uint32_t)isr_vector_ram[0]);
+
 	// start program (this will run its startup and toast our stack etc)
-	isr_vector_ram[1]();	
+	isr_vector_ram[1]();
 }
 
