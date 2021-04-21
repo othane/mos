@@ -69,9 +69,9 @@ if __name__ == "__main__":
 	l = int(math.ceil(len(msg) / 4.0) * 4)
 	crc = crc_buf(h, msg, l) & 0xffffffff
 
-	print "crc = " + hex(crc & 0xffffffff)
+	print("crc = " + hex(crc & 0xffffffff))
 	if crc == msg_crc:
-		print "unit test passed"
+		print("unit test passed")
 	else:
-		print "unit test failed"
+		print("unit test failed")
 
