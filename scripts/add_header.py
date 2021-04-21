@@ -4,7 +4,10 @@ import struct
 from collections import namedtuple
 import sys
 import os
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'lib'))
 import crc
 from argparse import *
@@ -41,7 +44,7 @@ if not os.path.exists(filename):
 	sys.exit("Unable open %s" % filename)
 
 # open the full program (open via StringIO so we can write back to filename if desired)
-prog = IntelHex(StringIO.StringIO(open(filename, "r").read()))
+prog = IntelHex(StringIO(open(filename, "r").read()))
 header_addr = prog.minaddr() # all programs require there header to be located at the start
 
 # read out the header

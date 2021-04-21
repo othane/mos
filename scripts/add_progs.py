@@ -5,7 +5,10 @@ from collections import namedtuple
 import copy
 import sys
 import os
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 
 def show_help():
@@ -29,7 +32,7 @@ prog_filename = sys.argv[2]
 
 # open the build and prog
 # note open build via StringIO so we can add to it
-build = IntelHex(StringIO.StringIO(open(build_filename, "r").read()))
+build = IntelHex(StringIO(open(build_filename, "r").read()))
 prog = IntelHex(prog_filename)
 
 # merge program into build
