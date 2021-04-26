@@ -36,7 +36,7 @@ export INCDIR = $(patsubst %,$(SELF_DIR)%,$(HINCDIR))
 OPENOCD_PATH ?= /usr/local/share/openocd/
 export OPENOCD_BIN = openocd
 export OPENOCD_INTERFACE ?= $(OPENOCD_PATH)/scripts/interface/stlink-v2.cfg
-export OPENOCD_TARGET = $(OPENOCD_PATH)/scripts/target/stm32f3x.cfg
+export OPENOCD_TARGET ?= $(OPENOCD_PATH)/scripts/target/stm32f3x.cfg
 
 OPENOCD_FLASH_CMDS = ''
 OPENOCD_FLASH_CMDS += -c 'reset halt'
