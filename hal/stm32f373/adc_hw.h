@@ -22,21 +22,29 @@
 typedef struct adc_t adc_t;
 struct adc_t
 {
-	SDADC_TypeDef *base;	///< which adc to use
-	uint32_t ref;
-	SDADC_AINStructTypeDef SDADC_AINStructure[3];
-	uint32_t sadc_clk_div;
+	void *base;	///< which adc to use (either SDADC_TypeDef or ADC_TypeDef)
+
+	// common config
 	dma_t *dma;				///< link to dma, trace requires dma for this module
 	struct
 	{
-		uint8_t sync_adc1;	///< start this adc with adc 1 start (different from below)
-		uint32_t type;		///< trigger type see SDADC_external_trigger_edge_for_injected_channels_conversion 
-		uint32_t source;	///< trigger source see SDADC_ExternalTrigger_sources
+		uint32_t source;	///< trigger source see @ref SDADC_ExternalTrigger_sources or  @ref ADC_external_trigger_sources_for_regular_channels_conversion
 		uint32_t cont;		///< 0 to trigger on first event and let it run, otherwise this requires a trigger for each sample [ie count triggers] (for some reason this only seems to work up till about 12KHz, not 16.66-50KHz as expected)
+		uint8_t sync_adc1;	///< [sdadc only] start this adc with adc 1 start (different from below)
+		uint32_t type;		///< [sdadc only] trigger type see SDADC_external_trigger_edge_for_injected_channels_conversion 
 	} trigger;
 
 	bool initalised;
+	enum adc_type {
+		SDADC=0,
+		ADC,
+	} type;
 	dma_request_t dma_req;
+	uint32_t adc_clk_div;
+
+	// sdadc config only
+	uint32_t ref;
+	SDADC_AINStructTypeDef SDADC_AINStructure[3];
 };
 
 
@@ -44,10 +52,11 @@ struct adc_t
 struct adc_channel_t
 {
 	adc_t *adc;				///< parent adc
-	uint32_t number;		///< which channel is this adc @ref SDADC_Channel
-	uint32_t conf;
+	uint32_t number;		///< which channel is this adc @ref SDADC_Channel or @ref ADC_Channel
+	uint8_t sample_time;	///< [no effect for sdadc] sample rate for this channel @ref ADC_sampling_times
+	uint32_t conf;			///< [sdadc only] configuration to use
 	gpio_pin_t *pin;		///< input pin
-	gpio_pin_t *pin_ref;	///< in differential mode use this pin as the - and pin as the +, else NULL
+	gpio_pin_t *pin_ref;	///< [sdadc only] in differential mode use this pin as the - and pin as the +, else NULL
 
 	adc_trace_complete_t complete;
 	void *complete_param;
