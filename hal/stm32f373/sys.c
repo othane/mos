@@ -94,13 +94,6 @@ static void sys_interrupt_init(void)
 }
 
 
-// init the on chip temperature sensor
-static void sys_temp_init(void)
-{
-	///@todo this is just a stub for now
-}
-
-
 // init a log via uart or trace
 static void sys_log_init(void)
 {
@@ -306,7 +299,6 @@ void sys_init(void)
 	sys_clk_init();
 	sys_interrupt_init();
 	sys_tick_init();
-	sys_temp_init();
 	sys_log_init();
 }
 

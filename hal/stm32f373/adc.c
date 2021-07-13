@@ -16,7 +16,7 @@
 #include "adc_hw.h"
 
 
-static uint32_t adc_apb2_periph(SDADC_TypeDef *base)
+static uint32_t adc_apb2_periph(void *base)
 {
 	switch ((uint32_t)base)
 	{
@@ -26,6 +26,8 @@ static uint32_t adc_apb2_periph(SDADC_TypeDef *base)
 			return RCC_APB2Periph_SDADC2;
 		case (uint32_t)SDADC3:
 			return RCC_APB2Periph_SDADC3;
+		case (uint32_t)ADC1:
+			return RCC_APB2Periph_ADC1;
 		default:
 			return RCC_APB2Periph_SDADC1;
 	}
@@ -50,44 +52,83 @@ static uint32_t adc_pwr_periph(SDADC_TypeDef *base)
 
 static void adc_init(adc_t *adc)
 {
-	uint32_t sadc_clk_div = adc->sadc_clk_div;
+	uint32_t adc_clk_div = adc->adc_clk_div;
 
-	// set adc clk to 6MHz
+	adc->type = adc_get_type(adc);
+
+	// setup adc clks
 	RCC_APB2PeriphClockCmd(adc_apb2_periph(adc->base), ENABLE);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
-	PWR_SDADCAnalogCmd(adc_pwr_periph(adc->base), ENABLE);
-	if (sadc_clk_div)
-		RCC_SDADCCLKConfig(sadc_clk_div);
-	else
-		// default to max speed if not specified
-		RCC_SDADCCLKConfig(RCC_SDADCCLK_SYSCLK_Div12);
 
 	// int the dma if given
 	if (adc->dma)
 		dma_init(adc->dma);
 
-	// setup the different adc configurations
-	SDADC_VREFSelect(adc->ref);
-	sys_spin(5);
-	SDADC_Cmd(adc->base, ENABLE);
-	SDADC_InitModeCmd(adc->base, ENABLE);
-	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
-	{}
-	SDADC_AINInit(adc->base, SDADC_Conf_0, &adc->SDADC_AINStructure[0]);
-	SDADC_AINInit(adc->base, SDADC_Conf_1, &adc->SDADC_AINStructure[1]);
-	SDADC_AINInit(adc->base, SDADC_Conf_2, &adc->SDADC_AINStructure[2]);
+	switch (adc->type)
+	{
+		case SDADC:
+			RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 
-	// option to allow adc's to be sync'ed
-	SDADC_InjectedSynchroSDADC1(adc->base, adc->trigger.sync_adc1);
+			PWR_SDADCAnalogCmd(adc_pwr_periph(adc->base), ENABLE);
+			if (adc_clk_div)
+				RCC_SDADCCLKConfig(adc_clk_div);
+			else
+				// default to max speed if not specified
+				RCC_SDADCCLKConfig(RCC_SDADCCLK_SYSCLK_Div12);
 
-	SDADC_InitModeCmd(adc->base, DISABLE);
+			// setup the different adc configurations
+			SDADC_VREFSelect(adc->ref);
+			sys_spin(5);
+			SDADC_Cmd(adc->base, ENABLE);
+			SDADC_InitModeCmd(adc->base, ENABLE);
+			while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+			{}
+			SDADC_AINInit(adc->base, SDADC_Conf_0, &adc->SDADC_AINStructure[0]);
+			SDADC_AINInit(adc->base, SDADC_Conf_1, &adc->SDADC_AINStructure[1]);
+			SDADC_AINInit(adc->base, SDADC_Conf_2, &adc->SDADC_AINStructure[2]);
 
-	// calibrate
-	SDADC_CalibrationSequenceConfig(adc->base, SDADC_CalibrationSequence_3);
-	SDADC_StartCalibration(adc->base);
-	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_EOCAL) == RESET)
-	{}
-	SDADC_ClearFlag(adc->base, SDADC_FLAG_EOCAL);
+			// option to allow adc's to be sync'ed
+			SDADC_InjectedSynchroSDADC1(adc->base, adc->trigger.sync_adc1);
+
+			SDADC_InitModeCmd(adc->base, DISABLE);
+
+			// calibrate
+			SDADC_CalibrationSequenceConfig(adc->base, SDADC_CalibrationSequence_3);
+			SDADC_StartCalibration(adc->base);
+			while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_EOCAL) == RESET)
+			{}
+			SDADC_ClearFlag(adc->base, SDADC_FLAG_EOCAL);
+			break;
+		case ADC:
+			if (adc_clk_div)
+				RCC_ADCCLKConfig(adc_clk_div);
+			else
+				// default to max speed if not specified
+				RCC_ADCCLKConfig(RCC_PCLK2_Div6); // 72MHz/6 = 12Mhz * 14clks/conv = 1.17us/conv (fastest speed possible at APB2=72Mhz)
+
+			ADC_InitTypeDef init =
+			{
+				.ADC_ScanConvMode = DISABLE,
+				.ADC_ContinuousConvMode = !adc.trigger.cont;
+				.ADC_ExternalTrigConv = adc.trigger.source,
+				.ADC_DataAlign = ADC_DataAlign_Right,
+				.ADC_NbrOfChannel = 1,
+			};
+
+			// init the adc
+			ADC_DeInit(adc->base);
+			ADC_Init(adc->base, &init);
+			ADC_Cmd(adc->base, ENABLE);
+			ADC_TempSensorVrefintCmd(ENABLE);
+
+			// calibration
+			ADC_ResetCalibration(adc->base);
+			while(ADC_GetResetCalibrationStatus(adc->base));
+			ADC_StartCalibration(adc->base);
+			while(ADC_GetCalibrationStatus(adc->base));
+
+			ADC_Cmd(adc->base, ENABLE);
+			break;
+	}
 
 	adc->initalised = true;
 }
@@ -99,7 +140,10 @@ static void adc_dma_cfg(adc_t *adc, dma_request_t *dma_req, void *buf, int count
 	DMA_InitTypeDef *adc_cfg = &dma_req->st_dma_init;
 
 	///@todo if sync is on then Base needs to be JDATA12R || JDATA13R and word size = DMA_PeripheralDataSize_Word
-	adc_cfg->DMA_PeripheralBaseAddr = (uint32_t)&adc->base->JDATAR;
+	if (adc->type == SDADC)
+		adc_cfg->DMA_PeripheralBaseAddr = (uint32_t)&((SDADC_TypeDef *)adc->base)->JDATAR;
+	else
+		adc_cfg->DMA_PeripheralBaseAddr = (uint32_t)&((ADC_TypeDef *)adc->base)->DR;
 	adc_cfg->DMA_PeripheralDataSize = DMA_PeripheralDataSize_HalfWord;
 	adc_cfg->DMA_MemoryDataSize = DMA_MemoryDataSize_HalfWord;
 
@@ -131,26 +175,55 @@ static void adc_dma_complete(dma_request_t *req, void *param)
 
 	sys_enter_critical_section();
 
-	// if we are in circular mode just keep going
-	if (!adc->dma->circ)
+	switch (adc->type == SDADC)
 	{
-		// stop the DMA, and turn off continuous mode, we are done
-		SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
+		case SDADC:
+			// if we are in circular mode just keep going
+			if (!adc->dma->circ)
+			{
+				// stop the DMA, and turn off continuous mode, we are done
+				SDADC_DMAConfig(ch->adc->base, SDADC_DMATransfer_Injected, DISABLE);
 
-		// stop continous mode
-		SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
+				// stop continous mode
+				SDADC_InjectedContinuousModeCmd(ch->adc->base, DISABLE);
 
-		// reset the trigger source
-		SDADC_InitModeCmd(adc->base, ENABLE);
-		while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
-		{}
-		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
-		SDADC_InitModeCmd(adc->base, DISABLE);
+				// reset the trigger source
+				SDADC_InitModeCmd(adc->base, ENABLE);
+				while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+				{}
+				SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+				SDADC_InitModeCmd(adc->base, DISABLE);
 
+			}
+			///@todo handle any overruns (we should really handle this in a isr
+			/// but for now we can just clear the flag and hope the dma still completes)
+			SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
+			break;
+		case ADC:
+			// if we are in circular mode just keep going
+			if (!adc->dma->circ)
+			{
+				ADC_InitTypeDef init =
+				{
+					.ADC_ScanConvMode = DISABLE,
+					.ADC_ContinuousConvMode = DISABLE,
+					.ADC_ExternalTrigConv = ADC_ExternalTrigConvEdge_None,
+					.ADC_DataAlign = ADC_DataAlign_Right,
+					.ADC_NbrOfChannel = 1,
+				};
+				// stop the DMA, and turn off continuous mode, we are done
+				ADC_DMACmd(ch->adc->base, DISABLE);
+				ADC_Init(adc->base, &init);
+
+				// clear EOC flag in case of overrun
+				ADC_GetConversionValue(adc->base);
+				ADC_ClearFlag(adc->base, ADC_FLAG_EOC);
+			}
+			///@todo handle any overruns (we should really handle this in a isr
+			/// but for now we can just clear the flag and hope the dma still completes)
+			SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
+			break;
 	}
-	///@todo handle any overruns (we should really handle this in a isr
-	/// but for now we can just clear the flag and hope the dma still completes)
-	SDADC_ClearITPendingBit(adc->base, SDADC_IT_JOVR);
 
 	sys_leave_critical_section();
 
@@ -187,43 +260,56 @@ void adc_trace(adc_channel_t *ch, volatile int16_t *dst, int count, int trigger,
 	adc->dma_req.complete_param = ch;
 	adc->dma_req.dma = adc->dma;
 	adc_dma_cfg(adc, &adc->dma_req, (void *)dst, count);
-	SDADC_DMAConfig(adc->base, SDADC_DMATransfer_Injected, ENABLE);
+	if (adc->type == SDADC)
+		SDADC_DMAConfig(adc->base, SDADC_DMATransfer_Injected, ENABLE);
 	dma_request(&adc->dma_req);
+	if (adc->type == ADC)
+		ADC_CMD(adc->base, ENABLE);
 
-	// use injected mode for all conversions so we can use a trigger if given
-	SDADC_InjectedChannelSelect(adc->base, ch->number);
-	SDADC_GetInjectedConversionValue(adc->base, &num); // clear JEOCF flag to ensure dma will be triggered (it needs an edge !)
-
-	// the following set-up(s) requires init mode 
-	SDADC_InitModeCmd(adc->base, ENABLE);
-	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
-	{}
-
-	// setup the trigger that keeps the adc running count times, if no trigger is given
-	// we use continuous mode to trigger it count times .. we use the fast mode when
-	// continuous mode is set since we assume a single channel for trace atm
-	if (trigger)
+	switch (adc->type == SDADC)
 	{
-		SDADC_InjectedContinuousModeCmd(adc->base, !adc->trigger.cont);
-		SDADC_ExternalTrigInjectedConvConfig(adc->base, adc->trigger.source);
-		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, adc->trigger.type);
-		SDADC_FastConversionCmd(adc->base, !adc->trigger.cont);
-	}
-	else
-	{
-		// we have no trigger so use continuous mode with the dma
-		SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
-		SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
-		SDADC_FastConversionCmd(adc->base, ENABLE);
-	}
+		case SDADC:
+			// use injected mode for all conversions so we can use a trigger if given
+			SDADC_InjectedChannelSelect(adc->base, ch->number);
+			SDADC_GetInjectedConversionValue(adc->base, &num); // clear JEOCF flag to ensure dma will be triggered (it needs an edge !)
 
-	// close init mode
-	SDADC_InitModeCmd(adc->base, DISABLE);
+			// the following set-up(s) requires init mode
+			SDADC_InitModeCmd(adc->base, ENABLE);
+			while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
+			{}
+
+			// setup the trigger that keeps the adc running count times, if no trigger is given
+			// we use continuous mode to trigger it count times .. we use the fast mode when
+			// continuous mode is set since we assume a single channel for trace atm
+			if (trigger)
+			{
+				SDADC_InjectedContinuousModeCmd(adc->base, !adc->trigger.cont);
+				SDADC_ExternalTrigInjectedConvConfig(adc->base, adc->trigger.source);
+				SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, adc->trigger.type);
+				SDADC_FastConversionCmd(adc->base, !adc->trigger.cont);
+			}
+			else
+			{
+				// we have no trigger so use continuous mode with the dma
+				SDADC_InjectedContinuousModeCmd(adc->base, ENABLE);
+				SDADC_ExternalTrigInjectedConvEdgeConfig(adc->base, SDADC_ExternalTrigInjecConvEdge_None);
+				SDADC_FastConversionCmd(adc->base, ENABLE);
+			}
+
+			// close init mode
+			SDADC_InitModeCmd(adc->base, DISABLE);
+
+			break;
+
 	sys_leave_critical_section();
 
 	// if we don't have a trigger start the adc manually
-	if (!trigger)
-		SDADC_SoftwareStartInjectedConv(adc->base);
+	if (!trigger) {
+		if (adc-type == SDADC)
+			SDADC_SoftwareStartInjectedConv(adc->base);
+		else
+			ADC_SoftwareStartConv(adc->base);
+	}
 }
 
 
@@ -300,8 +386,7 @@ void adc_set_gain(adc_channel_t *channel, uint8_t gain)
 	}
 	///@todo maybe we could add a post adc software gain to make this exact
 	adc->SDADC_AINStructure[channel->conf].SDADC_Gain = gains[min_err_idx].regval;
-	
-	
+
 	// update the SDADC_AINStructure gain
 	SDADC_InitModeCmd(adc->base, ENABLE);
 	while (SDADC_GetFlagStatus(adc->base, SDADC_FLAG_INITRDY) == RESET)
