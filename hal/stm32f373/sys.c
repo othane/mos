@@ -95,8 +95,15 @@ static void sys_interrupt_init(void)
 }
 
 
-// init the on chip temperature sensor
+// abastract these functions away incase adc.c is not in the config, then the
+// below functions can link (even though they should not be called since
+// sys_temperature_sensor will be NULL)
 weak adc_channel_t *__sys_temperature_sensor = NULL;
+weak void adc_channel_init(adc_channel_t *channel) {}
+weak int32_t adc_read(adc_channel_t *ch) { return 0; }
+
+
+// init the on chip temperature sensor
 static void sys_temp_init(void)
 {
 	if (__sys_temperature_sensor == NULL)
