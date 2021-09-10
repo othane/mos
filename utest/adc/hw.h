@@ -15,6 +15,7 @@
 #define __HW__
 
 extern adc_channel_t *adc_chan;
+extern adc_channel_t *__sys_temperature_sensor;
 
 
 #ifdef STM32F37X

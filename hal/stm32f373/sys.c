@@ -10,6 +10,7 @@
  */
 
 
+#include <math.h>
 #include <stm32f37x_conf.h>
 #include "hal.h"
 
@@ -91,6 +92,35 @@ static void sys_clk_init(void)
 static void sys_interrupt_init(void)
 {
 	///@todo stub for now (we should at least call NVIC_PriorityGroupConfig() here
+}
+
+
+// init the on chip temperature sensor
+weak adc_channel_t *__sys_temperature_sensor = NULL;
+static void sys_temp_init(void)
+{
+	if (__sys_temperature_sensor == NULL)
+		return;
+
+	adc_channel_init(__sys_temperature_sensor);
+}
+
+
+const uint16_t *__TS_CAL1 = (uint16_t *)0x1FFFF7B8;
+const uint16_t *__TS_CAL2 = (uint16_t *)0x1FFFF7C2;
+float sys_get_temperature(void)
+{
+	uint32_t ntemp;
+	float temp;
+
+	if (__sys_temperature_sensor == NULL)
+		return NAN;
+
+	ntemp = adc_read(__sys_temperature_sensor);
+
+	//@todo allow us of calibration settings and use built in settings as a backup somehow
+	temp = (80.0f/(*__TS_CAL2 - *__TS_CAL1))*(ntemp - *__TS_CAL1) + 30; // see AN3964 p9
+	return temp;
 }
 
 
@@ -299,6 +329,7 @@ void sys_init(void)
 	sys_clk_init();
 	sys_interrupt_init();
 	sys_tick_init();
+	sys_temp_init();
 	sys_log_init();
 }
 

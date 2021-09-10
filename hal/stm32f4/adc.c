@@ -32,6 +32,7 @@ static uint32_t adc_apb2_periph(ADC_TypeDef *base)
 }
 
 
+extern adc_channel_t *__sys_temperature_sensor;
 static void adc_init(adc_t *adc)
 {
 	ADC_CommonInitTypeDef common_init =
@@ -53,6 +54,8 @@ static void adc_init(adc_t *adc)
 		dma_init(adc->dma);
 
 	ADC_Cmd(adc->base, ENABLE);
+	if (__sys_temperature_sensor != NULL)
+		ADC_TempSensorVrefintCmd(ENABLE);
 
 	adc->initalised = true;
 }
@@ -264,7 +267,10 @@ int32_t adc_read(adc_channel_t *ch)
 	// init the adc channel as the only channel
 	ADC_RegularChannelConfig(adc->base, ch->number, 1, ch->sample_time);
 
+	sys_enter_critical_section();
+	ADC_ClearFlag(adc->base, ADC_FLAG_EOC);
 	ADC_SoftwareStartConv(adc->base);
+	sys_leave_critical_section();
 	while (ADC_GetFlagStatus(adc->base, ADC_FLAG_EOC) == RESET)
 	{}
 

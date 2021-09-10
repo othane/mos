@@ -82,6 +82,7 @@ static enum adc_type adc_get_type(void *base)
 }
 
 
+extern adc_channel_t *__sys_temperature_sensor;
 static void adc_init(adc_t *adc)
 {
 	uint32_t adc_clk_div = adc->adc_clk_div;
@@ -150,7 +151,8 @@ static void adc_init(adc_t *adc)
 			ADC_DeInit(adc->base);
 			ADC_Init(adc->base, &init);
 			ADC_Cmd(adc->base, ENABLE);
-			ADC_TempSensorVrefintCmd(ENABLE);
+			if (__sys_temperature_sensor != NULL)
+				ADC_TempSensorVrefintCmd(ENABLE);
 
 			// calibration
 			ADC_ResetCalibration(adc->base);

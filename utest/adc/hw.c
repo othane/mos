@@ -141,8 +141,17 @@
 		.pin = &adc_pa0_pin,
 	};
 
-	//adc_channel_t *adc_chan = &sdadc_chanC;
 	adc_channel_t *adc_chan = &adc_chanA;
+
+	adc_channel_t adc_temperature_sensor =
+	{
+		.adc = &adc1,
+		.number = ADC_Channel_TempSensor,
+		.sample_time = ADC_SampleTime_239Cycles5,
+		.pin = NULL,
+	};
+
+	adc_channel_t *__sys_temperature_sensor = &adc_temperature_sensor;
 
 #elif defined STM32F40_41xxx
 
@@ -218,6 +227,16 @@
 	};
 
 	adc_channel_t *adc_chan = &adc_chan0;
+
+	adc_channel_t adc_temperature_sensor =
+	{
+		.adc = &adc1,
+		.number = ADC_Channel_TempSensor,
+		.sample_time = ADC_SampleTime_480Cycles,
+		.pin = NULL,
+	};
+
+	adc_channel_t *__sys_temperature_sensor = &adc_temperature_sensor;
 
 #else
 
