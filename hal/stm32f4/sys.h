@@ -49,6 +49,13 @@ uint32_t sys_clk_freq(void);
 
 
 /**
+ * @brief return the system temperature (as best the chip can guess)
+ * @return system temperature in degC
+ */
+float sys_get_temperature(void);
+
+
+/**
  * @brief get the number of 1ms intervals since boot
  * @note there is not attempt to deal with rollovers in this function
  * @return the number of 1ms ticks that have occurred since boot time

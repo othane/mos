@@ -16,7 +16,12 @@
 #include <hal.h>
 #include <string.h>
 
-const char page0[2*16*1024] at_symbol(".free_page0") = {1,2,3,4,};
+#ifdef STM32F40_41xxx
+#define PAGE_SIZE (2*16*1024)
+#else
+#define PAGE_SIZE (2*2*1024)
+#endif
+const char page0[PAGE_SIZE] at_symbol(".free_page0") = {1,2,3,4,};
 char page0_ram[sizeof(page0)];
 const char msg[32] at_symbol(".free_page1") = "hello";
 char msg_ram[sizeof(msg)] = {0,};

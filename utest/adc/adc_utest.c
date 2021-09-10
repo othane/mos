@@ -16,6 +16,7 @@
 
 adc_trace_point_t buf[4096];
 uint32_t val = 0;
+float temp = 0;
 
 void init(void)
 {
@@ -32,6 +33,7 @@ void adc_handle_buffer(adc_trace_point_t *dst, int len)
 void adc_complete(adc_channel_t *ch, adc_trace_point_t *dst, int len, void *param)
 {
 	val = adc_read(ch);
+	temp = sys_get_temperature();
 	adc_handle_buffer((adc_trace_point_t *)dst, len);
 
 	memset((void *)buf, 0x00, sizeof(buf));
