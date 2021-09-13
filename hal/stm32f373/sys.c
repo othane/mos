@@ -126,7 +126,7 @@ float sys_get_temperature(void)
 	ntemp = adc_read(__sys_temperature_sensor);
 
 	//@todo allow us of calibration settings and use built in settings as a backup somehow
-	temp = (80.0f/(*__TS_CAL2 - *__TS_CAL1))*(ntemp - *__TS_CAL1) + 30; // see AN3964 p9
+	temp = (80.0f/(int32_t)(*__TS_CAL2 - *__TS_CAL1))*(int32_t)(ntemp - *__TS_CAL1) + 30.0f; // see AN3964 p9
 	return temp;
 }
 
